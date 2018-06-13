@@ -41,3 +41,5 @@ This tree is simply represented and merkled within the nodes of the state tree. 
 
 ![alt text](popow.png "State Tree")
 
+#### Propablistic Proofs of Proof of Work 
+Since headers are easily addressable, nano nodes can query random headers. This exponentially increases the proved work probablistically (as long as every random query is answered).
