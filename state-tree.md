@@ -42,4 +42,4 @@ This tree is simply represented and merkled within the nodes of the state tree. 
 ![alt text](popow.png "State Tree")
 
 #### Probabilistic Proofs of Proof of Work 
-Since headers are easily addressable, nano nodes can query random headers. This exponentially increases the proved work probabilistically (as long as every random query is answered).
+Since headers are easily addressable, nano nodes can query random headers. This exponentially increases the probabilistically proved work (as long as _every_ random query is answered).
