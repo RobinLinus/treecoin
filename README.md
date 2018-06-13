@@ -1,17 +1,28 @@
 # lovicash protocol architecture
 
-## design goals 
+## Design Goals 
 - censorship-resistant payment network
-- minimum 100 tx/s ( to compete with paypal )
-- nano clients
+- scalability
+  - up to 100 tx/s ( to compete with paypal )
+  - up to 1 000 000 concurrent clients
+- nano nodes
   - censorship-resistant
   - quick sync
   - web-based for simple usability
 
+# Overview
+
+## Client Overview
+1. Full Node ( fully verifying nodes with costly setup ) 
+  - Miner Node
+  - High-Stake Node ( such as exchanges or any other entity with high security requirements )
+2. Nano Node ( balance proofs & transaction broadcasting. quick and simple ) 
+  - Browser
+
 ## Network Overview
-1. Mainnet ( Miners and high-stake users )
-2. Browser Bridge 
-3. Browser Network
+1. Mainnet ( Full Nodes )
+2. Browser Bridge ( Full Node Hybrids )
+3. Browser Network ( Nano Nodes )
 
 ### Backbone Network
 Purpose:
