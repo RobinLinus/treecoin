@@ -31,7 +31,7 @@ The id of an output of an transaction consists of:
 - Data identifiers are 64 bit numbers:
   - block index: 39 bit ( enough for 12 billion blocks )
   - tx index: 17 bit ( enough for 100 000 tx / block )
-  - output index: 8 bit ( enough for 256 outputs )
+  - output index: 8 bit ( enough for 256 outputs / tx )
 - not random! blocks, transactions and outputs are indexed incrementally. Index == precise point in time
 
 
@@ -41,5 +41,5 @@ This tree is simply represented and merkled within the nodes of the state tree. 
 
 ![alt text](popow.png "State Tree")
 
-#### Propablistic Proofs of Proof of Work 
-Since headers are easily addressable, nano nodes can query random headers. This exponentially increases the proved work probablistically (as long as every random query is answered).
+#### Probabilistic Proofs of Proof of Work 
+Since headers are easily addressable, nano nodes can query random headers. This exponentially increases the proved work probabilistically (as long as every random query is answered).
