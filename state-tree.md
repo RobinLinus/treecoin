@@ -38,3 +38,6 @@ The id of an output of an transaction consists of:
 ### Proofs of Proof of Work
 Given another binary search tree on the most "heavy" blocks ( PoW >> difficulty target ), we can create the same effect as [Proofs of Proof of Work](https://eprint.iacr.org/2017/963.pdf) and therefore compress the headers chain proof logarithmically. This is very important to reduce the block time without increasing the sync load on nano clients.
 This tree is simply represented and merkled within the nodes of the state tree. The additional overhead is about one byte per node.
+
+![alt text](popow.png "State Tree")
+
