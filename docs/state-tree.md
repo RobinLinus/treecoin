@@ -2,7 +2,7 @@
 
 ## Design Goals
 - Fast, authenticated queries on the blockchain
-- Fast insertion
+- Fast state updates
 - Prunable chain state
 - Simple design
 
@@ -99,14 +99,12 @@ This design allows Nano nodes to perform a binary search to look up an address.
 
 This is neither the most optimal representation nor query. Though this inefficiency is practical and it even has some advantages:
 - Enhanced privacy
-  - Queries can be split among different peers such that it becomes harder for an attacker to unveil a nano node's addresses.
+  - Users can split queries among different peers such that it becomes harder for an attacker to unveil a nano node's addresses.
 - Enhanced load balancing
   - The Nano network inherently needs nano nodes to download more than what's relevant only to themselves. Therefore _not_ optimizing the state perfectly enforces nano clients to help scale the redundancy of state storage.
 
 Possible Optimizations
-- Addresses are uniformly distributed and therefore it is easy to calculate an educated guess for the range in which an address lies most likely. That reduces the query's overhead to `O( log(K) * log(M) )` whereas `K` is the length of the range and `K = O(log(N))`.
-- The dominant factor is `M`. By not merkling every UTXO, but only transactions, we reduce the query overhead to `M=3*10^8` which is a gain of about 30%.
-
+- Addresses are uniformly distributed and therefore it is easy to calculate an educated guess for the range in which an address lies most likely. That reduces the query's overhead to `O( log(K) * log(M) )` whereas `K` is the length of the range and `K = O(log(N))`. This is not a significant optimization though, because the dominant factor `M` remains.
 
 ## Delayed Commitments
-We do not want to introduce new consensus critical computation into the design of bitcoin. Therefore all indices are committed delayed: A block does not contain a commitment to the most recent state, but to the state of a predetermined predecessor such that all heavy computation can be precomputed before a new block is mined. This way we do not increase the other miners' time to verify a new block.
+We do not want to introduce new consensus critical computation into the design of bitcoin. Therefore all indices are committed delayed: A block does not contain a commitment to the most recent state, but to the state of a predetermined predecessor (i.e. from 6 blocks ago) such that all heavy computation can be precomputed before a new block is mined. This way we do not increase the other miners' time to verify or mine a new block.

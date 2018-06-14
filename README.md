@@ -11,16 +11,16 @@
 
 ## Architecture Overview
 The architecture is based on bitcoin's design and introduces the following extensions:
-- [_State Tree_: an efficient and authenticated global state representation.](docs/state-tree.md)
+- [_State Tree_: an efficient and authenticated representation of the global state.](docs/state-tree.md)
   -  _Headers tree_: an index for blocks in the chain.
     - _Proof of proofs of work_: compact proof of longest chain.
-  - TXO-IDs: an index for transaction outputs.
-  - UTXO bit vector: an index for unspent transaction outputs.
-  - Address index: an index for unspent transaction output addresses.
+  - TXO-IDs: an index for all transaction outputs.
+  - UTXO bit vector: an index for all unspent outputs.
+  - Address index: an index for the unspent outputs of _addresses_.
   - Transactions: compact UTXOs and signatures.
 - [Network](docs/network.md)
   - Backbone Network: miners and full nodes.
-  - Browser bridges: servers for block relay and seeding for nano nodes.
+  - Browser bridges: seeding for nano nodes and block relay into nano network.
   - Nano Network: self-serving nano nodes.
 
 ## Implementation
