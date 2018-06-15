@@ -1,6 +1,10 @@
 # Network
 
-## Client Overview
+## Design Goals
+- Scalability beyond a Million concurrent nodes.
+- Get rid of the concept of  "[clients](https://en.bitcoin.it/wiki/Clients)" which rely on servers and can't benefit a peer to peer network.
+
+## Node Family
 1. Full Node ( fully verifying nodes with costly setup )
   - Miner Node
   - High-Stake Node ( such as exchanges or any other entity with high security requirements )
@@ -16,15 +20,16 @@
 ### Backbone Network
 Purpose:
 - trust-less, censorship-resistant consensus
-- simple, efficient and resilient blockchain architecture
-- high tx throughput
+- simple, efficient and resilient
+- high throughput of transactions
 
 ### Browser Bridges
 Required for browsers to communicate with the backbone.
 
 Purpose:
-- Initial WebRTC Signaling
-- Initial Seeding
+- Initial seeding, in particular WebRTC signaling
+- Relay blocks from the backbone network into the browser network.
+- Relay transactions from the browser network into the backbone network.
 
 Requirements:
 - Open Port
@@ -35,11 +40,12 @@ Research Idea: Installation-free, browser-based websocket-to-webrtc bridges via 
 
 ### Browser Network
 Purpose:
-- distributed storage of the state
-- distributed updates of the state by applying new blocks from the bridge
-- serve all nano clients' queries within the browser network
+- Decentralized hosting of the state.
+- Decentralized updates of the state by applying new blocks received via the bridge.
+- Serve all nano nodes' queries within the browser network.
+- Route transactions to the bridge.
 
 Requirements:
-- P2P Network
-- WebRTC Signaling
-- Distributed Hash Table
+- Browser-based P2P Network
+  - Browser-to-Browser WebRTC signaling
+- Distributed Hash Table to store the state
