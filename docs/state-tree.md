@@ -70,7 +70,7 @@ The id of an output of a transaction consists of:
 - not random! blocks, transactions and outputs are indexed incrementally. Index == precise point in time
 
 ## Address Index
-The Address Index is a simple structure to query the  balance proof for an address. Transaction outputs contain [the balance of an address](transactions.md#address-balance) and therefore the UTXO set growth is `O("number of addresses")` instead of `O("number of transactions")`. Thus we simply sort the set of all UTXO ids by lexicographic order of the corresponding address to get a simple map from address to UTXO id.
+The Address Index is a simple structure to query the  balance proof for an address. Transaction outputs contain [the balance of an address](transactions.md#address-balance) and therefore the UTXO set grows like `O("number of addresses")` instead of `O("number of transactions")`. Thus we simply sort the set of all UTXO ids by lexicographic order of the corresponding address to get a simple map from address to UTXO id.
 
 Assuming 1 Million addresses and 40 bit UTXO ids, we get an Address Index size of 5 MB. To further scale this approach we can introduce another Merkle tree to chunk the Address Index into chunks of about 500 KB. The required overhead for the tree is `O( "number of addresses" / 100000 )` and thus neglectable.  
 
@@ -83,9 +83,10 @@ This is neither the most optimal representation nor query. Though this inefficie
 - Enhanced load balancing
   - The Nano network inherently needs nano nodes to download more than what's relevant only to themselves. Therefore _not_ optimizing the state perfectly enforces nano clients to help scale the redundancy of state storage.
 
-
 Possible Optimizations:
-- Addresses are uniformly distributed and therefore it is easy to calculate an educated guess for the range in which an address lies most likely. That reduces the query's overhead to `O( log(K) * log(M) )` whereas `K` is the length of the range and `K = O(log(N))`. This is not a significant optimization though, because the dominant factor `M` remains.
+- Users using multiple addresses can easily "mine" their addresses such that they probably end up in the same chunks, to reduce the amount of chunks needed to prove all their addresses' balances.
+- Addresses are uniformly distributed and therefore it is easy to calculate an educated guess for the chunk in which an address lies most likely. That reduces the query's overhead since a user knows in advance which chunk he needs.
+- We can achieve the same effect by providing a prefix for the first and last entry in every chunk. These prefixes are propagated up the chunks tree to create a binary search tree.
 
 
 # Optimizations
