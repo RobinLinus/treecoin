@@ -17,7 +17,7 @@ The architecture is based on bitcoin's design and introduces the following exten
   - TXO-IDs: an index for all transaction outputs.
   - UTXO bit vector: an index for all unspent outputs.
   - Address index: an index for the unspent outputs of _addresses_.
-  - [Transactions](transactions.md): compact UTXOs and signatures.
+  - [Transactions](docs/transactions.md): compact UTXOs and signatures.
 - [Network](docs/network.md)
   - Backbone Network: miners and full nodes.
   - Browser bridges: seeding for nano nodes and block relay into nano network.

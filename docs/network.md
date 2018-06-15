@@ -5,10 +5,10 @@
 - Get rid of the concept of  "[clients](https://en.bitcoin.it/wiki/Clients)" which rely on servers and can't benefit a peer to peer network.
 
 ## Node Family
-1. Full Node ( fully verifying nodes with costly setup )
+- Full Node ( fully verifying nodes with costly setup )
   - Miner Node
   - High-Stake Node ( such as exchanges or any other entity with high security requirements )
-2. Nano Node ( balance proofs & transaction broadcasting. quick and simple )
+- Nano Node ( balance proofs & transaction broadcasting. quick and simple )
   - Browser
   - IOT devices
 
@@ -23,6 +23,8 @@ Purpose:
 - simple, efficient and resilient
 - high throughput of transactions
 
+Full nodes are the fundamental anchor of trust-less security. A node which fully implements the protocol will always use the correct block chain and will never allow double-spends or invalid transactions to exist in the block chain under any circumstances.
+
 ### Browser Bridges
 Required for browsers to communicate with the backbone.
 
@@ -36,16 +38,19 @@ Requirements:
 - Domain
 - SSL Certificate
 
-Research Idea: Installation-free, browser-based websocket-to-webrtc bridges via insecure origins/data URLs?
+Research Idea: Installation-free, browser-based WebSocket-to-WebRTC bridges via insecure origins/data URLs?
 
 ### Browser Network
 Purpose:
-- Decentralized hosting of the state.
+- Decentralized hosting of the chain state.
 - Decentralized updates of the state by applying new blocks received via the bridge.
 - Serve all nano nodes' queries within the browser network.
 - Route transactions to the bridge.
 
+Nodes which only partially implement the protocol typically trust that 50% or more of the network's mining power is honest.
+
+
 Requirements:
 - Browser-based P2P Network
-  - Browser-to-Browser WebRTC signaling
-- Distributed Hash Table to store the state
+  - Browser-to-Browser _WebRTC signaling_
+- _Distributed Hash Table_ to host the chain state
