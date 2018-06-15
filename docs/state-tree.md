@@ -70,7 +70,7 @@ The id of an output of a transaction consists of:
 - not random! blocks, transactions and outputs are indexed incrementally. Index == precise point in time
 
 ## Address Index
-The Address Index is a simple structure to query the  balance proof for an address. Transaction outputs contain [the balance of an address](transitions.md#Balance%20Proofs) and therefore the UTXO set growth is `O("number of addresses")` instead of `O("number of transactions")`. Thus we simply sort the set of all UTXO ids by lexicographic order of the corresponding address to get a simple map from address to UTXO id.
+The Address Index is a simple structure to query the  balance proof for an address. Transaction outputs contain [the balance of an address](transactions.md#address-balance) and therefore the UTXO set growth is `O("number of addresses")` instead of `O("number of transactions")`. Thus we simply sort the set of all UTXO ids by lexicographic order of the corresponding address to get a simple map from address to UTXO id.
 
 Assuming 1 Million addresses and 40 bit UTXO ids, we get an Address Index size of 5 MB. To further scale this approach we can introduce another Merkle tree to chunk the Address Index into chunks of about 500 KB. The required overhead for the tree is `O( "number of addresses" / 100000 )` and thus neglectable.  
 
