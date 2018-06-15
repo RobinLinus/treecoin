@@ -69,47 +69,12 @@ The id of an output of a transaction consists of:
   - output index: 8 bit ( enough for 256 outputs / tx )
 - not random! blocks, transactions and outputs are indexed incrementally. Index == precise point in time
 
-
-## UTXO Index
-For any given output index we want to know if the output is spent or unspent. Since TXO Id's are almost perfectly incremental, we simply represent the state of every output in a bit vector. This bit vector simply represents
- - `v[i] = 1` if "the i-th output is unspent".
- - `v[i] = 0` if "the i-th output is spent".
-
-This approach scales well: even a naive 1 GB bit vector could store the state of 8 Billion outputs.
-
-We can improve the naive space complexity drastically because our bit vector is very sparse.
-Assuming the current state of bitcoin we'd have about 1 Billion transaction outputs of which only 60 Million are _unspent_. Represented in our bit vector this results in a density of 1:16.
-
-We can further reduce the amount of UTXOs by accumulating the total balance of an address in its latest output. Bitcoin currently has less than 1 Million non-zero addresses. Storing only the most recent UTXO per address reduces the UTXO set to about 1 Million entries ( assuming no script outputs for now ) which results in a density of 1:1000.
-
-There are many simple algorithms to compress sparse bit vectors. Assuming a vector density of 1:1000 and thus a (conservative) compression ratio of 1:100 we can compress 1 GB to about 10 MB.
-
-Updating the UTXO index is simple because there are only two cases:
-- append new block ( append "1" for every output in block )
-- spend output ( set v[i]="0" )
-
-We can scale even better by chunking the bit vector:
-  - Fixed chunk lengths ( i.e. 15 000 blocks, to limit chunk size to about 250 KB. )
-  - Sorted by TXO Id ( which is equal to "sorted by age" )
-    - to exploit the fact that _old_ UTXOs occur way less frequently than recent UTXOs. Therefore most updates aren't random, but tend to occur mostly in the most recent chunks.
-  - Introduce a _Chunks tree_: simple Merkle tree for logarithmic chunk inclusion proofs.
-
-
-  Fixed chunks, an order and a Merkle tree implicitly defines another simple index and therefore it allows to answer queries without knowing the full vector but only the chunks relevant to the query.
-
 ## Address Index
-The UTXO index can only prove that a certain TXO is unspent, though it can not answer which output belongs to a certain _address_.
-Therefore we introduce the _Address Index_ which is basically the UTXO set ordered lexicographically by address.
+The Address Index is a simple structure to query the  balance proof for an address. Transaction outputs contain [the balance of an address](transitions.md#Balance%20Proofs) and therefore the UTXO set growth is `O("number of addresses")` instead of `O("number of transactions")`. Thus we simply sort the set of all UTXO ids by lexicographic order of the corresponding address to get a simple map from address to UTXO id.
 
-A compact representation:
-- Let N = "number of UTXOs".
-- Let S = "range of integers from 1 to N"
-- Every integer `i` in S corresponds to "the i-th UTXO" ( the actual i-th UTXO Id results from the UTXO index. )
-- Sort S in lexicographic order of the address of the corresponding UTXO.
+Assuming 1 Million addresses and 40 bit UTXO ids, we get an Address Index size of 5 MB. To further scale this approach we can introduce another Merkle tree to chunk the Address Index into chunks of about 500 KB. The required overhead for the tree is `O( "number of addresses" / 100000 )` and thus neglectable.  
 
-Assuming again Bitcoin's current state with 1 Million addresses, this would lead to an address index of about 2.5 MB. ( To scale beyond these numbers we can chunk the address index and combine it with the chunks of the UTXO bit vector. )
-
-This design allows Nano nodes to perform a binary search to look up an address.
+This design allows nano nodes to perform a binary search to look up an address.
   - The overhead is about `O( log(N) * log(M) )` whereas `N` is the UTXO count and `M` is the TXO count. In Bitcoin's current state that's about 20 KB per address balance proof.
 
 This is neither the most optimal representation nor query. Though this inefficiency is practical and it even has some advantages:
@@ -117,6 +82,7 @@ This is neither the most optimal representation nor query. Though this inefficie
   - Users can split queries among different peers such that it becomes harder for an attacker to unveil a nano node's addresses.
 - Enhanced load balancing
   - The Nano network inherently needs nano nodes to download more than what's relevant only to themselves. Therefore _not_ optimizing the state perfectly enforces nano clients to help scale the redundancy of state storage.
+
 
 Possible Optimizations:
 - Addresses are uniformly distributed and therefore it is easy to calculate an educated guess for the range in which an address lies most likely. That reduces the query's overhead to `O( log(K) * log(M) )` whereas `K` is the length of the range and `K = O(log(N))`. This is not a significant optimization though, because the dominant factor `M` remains.
