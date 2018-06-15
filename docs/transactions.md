@@ -1,5 +1,7 @@
 # Transactions
 
+## Overview
+![alt text](images/transaction.png?1 "Transaction")
 
 ## Account Balance
 Storing only the most recent UTXO per address reduces the growth of the UTXO set from O("number of transactions") to O("number of accounts"). Assuming Bitcoin's current state, we have [50 Million UTXOs](https://blockchain.info/charts/utxo-count) owned by only [500 000 unique addresses](https://blockchain.info/charts/n-unique-addresses) that's an improvement of 1:100.
