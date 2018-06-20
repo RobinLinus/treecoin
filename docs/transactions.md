@@ -25,7 +25,8 @@ We use [Schnorr signatures](https://github.com/WebOfTrustInfo/rebooting-the-web-
 - Stronger security proof.
 - Nice simplicity. They’re considered the simplest form of digital signature.
 - Fast & efficient. They can be implemented in blindingly quick ways on Intel hardware.
-- Nice aggregation properties for compact multi-signatures (i.e. see [Tree Signatures](https://blockstream.com/2015/08/24/treesignatures/)).
+- Nice aggregation and threshold properties for compact multi-signatures (i.e. see [Tree Signatures](https://blockstream.com/2015/08/24/treesignatures/)).
+- Use a predefined "R" to reduce the signature size to 32 bytes. This also enforces users to use a signature only once.
 
 #### Further Resources
 - [Schnorr Multi-Signatures](https://eprint.iacr.org/2018/068.pdf)

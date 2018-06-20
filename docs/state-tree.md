@@ -17,8 +17,6 @@ The _State Tree_ is a modified blockchain: an authenticated, indexed, append-onl
   - _Proof of proofs of work_: a compact _proof of longest chain_.
 - TXO-IDs: an index for all transaction outputs.
 - Address index: an index for the unspent outputs of an _address_.
-- [Transactions](transactions.md): compact inputs and signatures.
-
 
 ## Headers Tree
 

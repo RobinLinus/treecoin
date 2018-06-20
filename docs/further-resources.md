@@ -3,7 +3,10 @@
 - [A Treatise on Altcoins](https://download.wpsoftware.net/bitcoin/alts.pdf)
 
 
-- [Bullet Proofs](https://cryptopapers.info/assets/pdf/bulletproofs.pdf)
-- Lightning
-  - [Eltoo: A Simple Layer2 Protocol for Bitcoin](https://blockstream.com/eltoo.pdf)
-  - [Eltoo: next lightning](https://blockstream.com/2018/04/30/eltoo-next-lightning.html)
+
+
+
+
+## Scaling
+- [Peter Todd at MIT Bitcoin Expo](https://youtu.be/96ULlHhia_Q?t=5h29m23s)
+- [Bitcoin Mailing list "A better MMR Definition"]https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-April/013941.html

@@ -1,0 +1,8 @@
+[package]
+name = "tree-coin"
+version = "0.1.0"
+authors = ["RobinLinus <robinlinus@users.noreply.github.com>"]
+
+[dependencies]
+primitives = { path = "src/primitives" }
+blockchain = { path = "src/blockchain" }
