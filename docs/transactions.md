@@ -28,6 +28,13 @@ We use [Schnorr signatures](https://github.com/WebOfTrustInfo/rebooting-the-web-
 - Nice aggregation and threshold properties for compact multi-signatures (i.e. see [Tree Signatures](https://blockstream.com/2015/08/24/treesignatures/)).
 - Use a predefined "R" to reduce the signature size to 32 bytes. This also enforces users to use a signature only once.
 
+## No Scripts
+- No script language 
+- simple feature set:
+  - Multi-Signature 
+  - script-less scripts / discrete log contracts 
+
+
 #### Further Resources
 - [Schnorr Multi-Signatures](https://eprint.iacr.org/2018/068.pdf)
 - [Key Aggregation](https://blockstream.com/2018/01/23/musig-key-aggregation-schnorr-signatures.html)
