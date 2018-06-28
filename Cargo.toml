@@ -5,3 +5,4 @@ authors = ["RobinLinus <robinlinus@users.noreply.github.com>"]
 
 [dependencies]
 rand = "0.5.2"
+blake2-rfc = "0.2"
