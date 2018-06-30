@@ -9,6 +9,7 @@ pub enum Event{
 	OutgoingPeer(PeerTracker),
 	MessageHeader(PeerChannel),
 	BlockMined(Block),
+	InvalidInput(),
 	Nothing,
 } 
 

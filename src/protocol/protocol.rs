@@ -1,3 +1,4 @@
+use blockchain::blockchain::Blockchain;
 use network::message::{ EmptyMessageBody, Message, MessageHeader };
 
 use network::peer::{ PeerTracker, PeerChannel, PeerInfo, PeerAddress };
@@ -17,7 +18,7 @@ impl EventListener for Protocol{
 		match event {
 		    Event::IncommingPeer(peer_tracker) => self.on_incomming_peer(peer_tracker),
 			Event::OutgoingPeer(peer_tracker) => self.on_outgoing_peer(peer_tracker),
-			Event::BlockMined(block) => self.on_block_mined(block),
+			Event::BlockMined(mut block) => self.on_block_mined(block),
 			Event::MessageHeader(peer_channel) => self.on_message_header(peer_channel),
 			Event::Nothing => (),
 			_ => ()
@@ -29,7 +30,7 @@ impl EventListener for Protocol{
 pub struct Protocol {
     miner : Miner,
     network : Network,
-    // blockchain : Blockchain,
+    blockchain : Blockchain,
     cycle_count: u64
 }
 
@@ -59,9 +60,9 @@ impl Protocol {
 
 	fn on_incomming_peer( &mut self, peer_tracker: PeerTracker ){
 		// send our info
-		let info = PeerInfo::new(self.network.server.address());
 		let mut peer = peer_tracker.read().unwrap();
 		let mut conn = peer.connection.write().unwrap();
+		let info = PeerInfo::new(self.network.server.address());
 		info.to_message().write(&mut *conn);
 		println!(">> Incoming Peer {:?}", peer.address());
 
@@ -71,9 +72,9 @@ impl Protocol {
 	 
 	fn on_outgoing_peer( &mut self, peer_tracker: PeerTracker ){
 		// send our info
-		let info = PeerInfo::new(self.network.server.address());
 		let mut peer = peer_tracker.read().unwrap();
 		let mut conn = peer.connection.write().unwrap();
+		let info = PeerInfo::new(self.network.server.address());
 		info.to_message().write(&mut *conn);
 		println!(">> Outgoing Peer {:?}", peer.address());
 
@@ -115,13 +116,13 @@ impl Protocol {
 		let mut conn = peer.connection.write().unwrap();
 		match Block::read(&mut *conn) {
 		    Ok(mut block) => {
-		    	println!(">> HASH: {:?}", block.hash());
-		    	println!(">> Received: {:?}", block)
+		    	println!(">> Received: {:?}", block);
+		    	self.blockchain.verify_block(&mut block);
+		    	self.blockchain.apply_block(&mut block);
+		    	self.miner.update_head(self.blockchain.root_hash(), self.blockchain.difficulty_target);
 		    },
 		    Err(e) => println!("Block Read Error {:?}", e),
 		}
-
-		
 	}
 
 	fn on_address(&mut self, channel:PeerChannel){
@@ -142,7 +143,9 @@ impl Protocol {
 		
 	}
 
-    fn on_block_mined(&mut self, block: Block){
+    fn on_block_mined(&mut self, mut block: Block){
+		self.blockchain.apply_block(&mut block);
+		self.miner.update_head(self.blockchain.root_hash(), self.blockchain.difficulty_target);
 		self.network.broadcast(&block.to_message());
 	}
 
@@ -163,13 +166,14 @@ impl Protocol {
 	}
 	
 
-
 	// boilerplate
-	pub fn new(network: Network, miner: Miner) -> Protocol{
+	pub fn new(network: Network, mut miner: Miner, mut blockchain: Blockchain) -> Protocol{
+		miner.update_head(blockchain.root_hash(), blockchain.difficulty_target);
 		Protocol{
 			miner,
 			network,
-			cycle_count:0
+			blockchain,
+			cycle_count: 0
 		}
 	} 
 
@@ -196,7 +200,7 @@ impl Protocol {
 
 	fn log_stats(&self){
 		// do not print every cycle 
-		if( self.cycle_count % 500000 ) != 0{ return };
-		println!("Stats: cycle_count: {:?},  peer_count: {}", self.cycle_count , self.network.peers_count());    
+		if( self.cycle_count % 50000 ) != 0{ return };
+		println!("\n\nStats: \n\tcycle_count: {:?} \n\tpeer_count: {} \n\tchain_lenght: {:?} \n\tstate_hash: {:?}", self.cycle_count , self.network.peers_count(), self.blockchain.size(), self.blockchain.root_hash());    
 	}
 }

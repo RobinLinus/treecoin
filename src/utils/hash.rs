@@ -1,12 +1,18 @@
 extern crate blake2_rfc as blake2;
 use utils::hash::blake2::blake2b::Blake2b;
+extern crate rand;
+use self::rand::Rng;
+
 use utils::serializer::{ Reader, Readable, Writer, Writeable };
 use std::fmt;
 use std::fmt::Debug;
 use std::io::{ Write, Read, Error };
 use utils::hex::{to_hex,from_hex};
 
+#[derive(PartialEq, Eq, Hash, Copy, Clone)]
 pub struct Hash([u8;32]);
+
+static ZEROS : Hash = Hash([0u8; 32]);
 
 impl Hash {
     pub fn new(buffer: [u8;32]) -> Hash {
@@ -24,7 +30,11 @@ impl Hash {
 	}
 
 	pub fn zeros() -> Hash{
-		Hash::new([0u8;32])
+		ZEROS
+	}
+
+	pub fn random() -> Hash {
+		Hash::new(rand::random())
 	}
 }
 

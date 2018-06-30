@@ -1,4 +1,6 @@
-use utils::serializer::{ Reader, Readable, Writer, Writeable };
+use protocol::event::EventResult;
+use protocol::event::Event;
+pub use utils::serializer::{ Reader, Readable, Writer, Writeable };
 
 use std::fmt;
 use std::hash::Hash;
@@ -9,6 +11,7 @@ pub type Value = u64;
 
 pub type TransactionInput = u64;
 
+#[derive(Clone, Copy)]
 pub struct Address([u8;32]);
 
 impl Address{
@@ -44,9 +47,9 @@ impl Readable for Address {
 
 
 pub struct TransactionOutput {
-    address: Address,
-    value: Value,
-    balance: Value
+    pub address: Address,
+    pub value: Value,
+    pub balance: Value
 }
 
 impl TransactionOutput {
@@ -86,6 +89,11 @@ impl Signature{
     pub fn to_hex(&self) -> String{
         hex::to_hex(self.0.to_vec())
     }
+
+    pub fn verify_multi_sig(&self, addresses: Vec<Address>)  -> EventResult {
+        // Todo: implement multi signature verification...
+        Ok(Event::Nothing)
+    }
 }
 
 impl fmt::Debug for Signature {
@@ -112,9 +120,9 @@ impl Readable for Signature {
 
 
 pub struct Transaction {
-    inputs: Vec<TransactionInput>,
-    outputs: Vec<TransactionOutput>,
-    signature: Signature
+    pub inputs: Vec<TransactionInput>,
+    pub outputs: Vec<TransactionOutput>,
+    pub signature: Signature
 }
 
 impl Transaction {

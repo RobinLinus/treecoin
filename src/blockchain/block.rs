@@ -1,3 +1,5 @@
+use protocol::event::EventResult;
+use protocol::event::Event;
 use utils::hash::Hashable;
 use utils::serializer::{ Reader, Readable, Writer, Writeable };
 
@@ -9,38 +11,48 @@ use std::marker::Sized;
 use utils::Hash;
 use protocol::protocol::message_type;
 
-pub struct BlockHeader{
-    prev: Hash,
-    timestamp: u32
+pub struct BlockHeader {
+    pub state: Hash,
+    pub timestamp: u32,
+    pub difficulty_target: u32
 }
 
-impl BlockHeader{
-    pub fn new(prev: Hash, timestamp: u32) -> BlockHeader {
-        BlockHeader{prev, timestamp}
+impl BlockHeader {
+
+    pub fn new(state: Hash, timestamp: u32, difficulty_target: u32) -> BlockHeader {
+        BlockHeader{ state, timestamp, difficulty_target }
     }
+
+    pub fn verify_proof_of_work(&self) -> EventResult {
+        // Todo implementation
+        Ok(Event::Nothing)
+    }
+
 }
 
 impl Writeable for BlockHeader{
     fn write(&self, writer: &mut Writer) -> Result<(), Error>{
-        self.prev.write(writer);
-        self.timestamp.write(writer)
+        self.state.write(writer)?;
+        self.timestamp.write(writer)?;
+        self.difficulty_target.write(writer)
     }
 }
 
 impl Readable for BlockHeader {
     fn read(reader: &mut Reader) -> Result<BlockHeader, Error>{
         Ok(BlockHeader{
-            prev: Hash::read(reader)?,
-            timestamp: u32::read(reader)?
+            state: Hash::read(reader)?,
+            timestamp: u32::read(reader)?,
+            difficulty_target: u32::read(reader)?
         })
     }
 } 
 
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Block {
-    header:BlockHeader,
-    transactions:Vec<Transaction>
+    pub header: BlockHeader,
+    pub transactions: Vec<Transaction>
 }
 
 impl Block {
@@ -55,8 +67,8 @@ impl Block {
         self.transactions.push(transaction);
     }
 
-     pub fn to_message(self) -> Message<Block>{
-        Message::new(message_type::BLOCK, self)
+     pub fn to_message(self) -> Message<Block> {
+        Message::new( message_type::BLOCK, self )
     }
 }
 
@@ -105,12 +117,12 @@ impl Hashable for Block {}
 
 impl fmt::Debug for BlockHeader {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "BlockHeader\n\t{:?}\n\t{:?}", self.timestamp, self.prev)
+        write!(f, "BlockHeader\n\tstate: {:?}\n\ttimestamp: {:?}", self.state,  self.timestamp)
     }
 }
 
-// impl fmt::Debug for Block {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(f, "{:?}\n", self.header, self.prev)
-//     }
-// }
+impl fmt::Debug for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}\n", self.header)
+    }
+}

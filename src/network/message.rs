@@ -3,7 +3,7 @@ use std::io::Error;
 use protocol::protocol::message_type;
 
 
-const MAGIC_BYTES : u32 = 4040404040;
+const MAGIC_BYTES : u16 = 4294967295;
 
 #[derive(Debug)]
 pub struct Message<T:Writeable> {
@@ -29,12 +29,12 @@ impl <T:Writeable> Writeable for Message<T> {
 
 #[derive(Debug)]
 pub struct MessageHeader{
-    magic_bytes: u32,
+    magic_bytes: u16,
     pub message_type: MessageType,
 }
 
 impl MessageHeader {
-    pub fn new(magic_bytes:u32, message_type:MessageType) -> MessageHeader{
+    pub fn new(magic_bytes:u16, message_type:MessageType) -> MessageHeader{
     	MessageHeader{
     		magic_bytes: magic_bytes,
     		message_type: message_type
@@ -53,7 +53,7 @@ impl Writeable for MessageHeader {
 impl Readable for MessageHeader{
     fn read(reader: &mut Reader) -> Result<MessageHeader, Error>{
         Ok( MessageHeader{ 
-            magic_bytes: u32::read(reader)?, 
+            magic_bytes: u16::read(reader)?, 
             message_type: u32::read(reader)?
         })
     }
