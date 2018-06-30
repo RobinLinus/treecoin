@@ -1,20 +1,20 @@
-use blockchain::primitives::message_type;
-use std::sync::Arc;
-use std::sync::RwLock;
-use network::message::{ Message, MessageHeader, Address, EmptyMessageBody, Readable, Writeable };
+use utils::serializer::{ Reader, Readable, Writer, Writeable };
+use network::peer::{ Peer, PeerTracker, PeerChannel, PeerAddress };
+use network::message::{ Message, MessageHeader, EmptyMessageBody };
+use protocol::event::{ EventSource, EventResult, Event };
+use protocol::protocol::message_type;
+use std::sync::{ Arc, RwLock };
 use std::collections::{ HashSet, HashMap };
 use std::io;
 use std::io::{ Read, Write, Error };
 use std::{ thread, time };
 use std::net::{ Shutdown, SocketAddr, TcpListener, TcpStream };
-extern crate rand;
 use std::str;
 
-use network::peer::{ Peer, PeerTracker, PeerChannel };
 
 pub struct Network {
     peers: RwLock<HashMap<String, PeerTracker>>,
-    max_peers: usize,
+    peers_count_target: usize,
     pub server: Server,
     address_book : HashSet<String>
 }
@@ -24,7 +24,7 @@ impl Network {
 	pub fn new(seed_nodes : Vec<String>) -> Network {
 	    Network{
 	    	peers: RwLock::new(HashMap::new()),
-	    	max_peers: 10,
+	    	peers_count_target: 10,
 	    	server: Server::new(),
 	    	address_book : seed_nodes.iter().cloned().collect()
 	    }
@@ -36,64 +36,66 @@ impl Network {
 		Ok(())
 	}
 
-	pub fn poll_new_message(&mut self) -> Option<PeerChannel> {
+	pub fn poll_new_message(&mut self) -> EventResult {
 	    for (address, peer) in self.peers.read().unwrap().iter(){
 			match peer.write().unwrap().receive() {
-			    Some(message_header) => return Some( PeerChannel{
-			    	peer: peer.clone(),
-			    	message_header: message_header
-			    }),
+			    Some(message_header) => return Ok(Event::MessageHeader(
+			    	PeerChannel{
+			    		peer: peer.clone(),
+			    		message_header: message_header
+			    })),
 			    None => continue,
 			};
 		}
-		None
+		Ok(Event::Nothing)
 	}
 
-	fn poll_new_peers(&mut self){
+	fn poll_new_peers(&mut self) -> EventResult{
 		match self.server.poll_new_peer() {
 		    Some(peer) => {
-		    	self.add_peer(peer);
-		    	self.server.address();
+		    	Ok(Event::IncommingPeer(peer.to_tracker()))
 		    },
-		    None => return
-		};
+		    None => Ok(Event::Nothing)
+		}
 	}
 
-	fn add_peer(&self, peer: Peer){
+	pub fn add_peer(&self, peer_tracker: PeerTracker){
 		let mut peers = self.peers.write().unwrap();
-		peers.insert(peer.address(), peer.to_tracker());
+		let address = peer_tracker.read().unwrap().address();
+		peers.insert(address, peer_tracker);
 	}
 
-    pub fn poll_network_jobs(&mut self){
-		// do we have a new incoming peer?
-		self.poll_new_peers();
-		// can we connect to more peers? 
-		self.connect_to_peers();
-	}
+	fn connect_to_peers(&mut self) -> EventResult{
 
-	fn connect_to_peers(&mut self){
-
-		if (self.peers.read().unwrap().len() > self.max_peers) { return; }
+		if (self.peers.read().unwrap().len() > self.peers_count_target) { return Ok(Event::Nothing); }
 		// for each entry in our address book 
 		for address in &mut (self.address_book).iter(){
 			// is not yet connected? 
-			if self.peers.read().unwrap().contains_key(address) { continue ; }
+			if self.is_connected(address.to_string()) { continue; }
 			// is not ourselves? 
 			if self.server.address().equals(&address.to_owned()) { continue; }
 			// then connect  
 			match self.server.connect_to_peer(address.to_string()) {
 			    Some(mut peer) => {
-			    	self.peers.write().unwrap().insert(peer.address(), peer.to_tracker());
+			    	return Ok(Event::OutgoingPeer(peer.to_tracker()))
 			    },
 			    None => continue,
 			};
 		}
+		return Ok(Event::Nothing);
+	}
+
+	fn is_connected(&self, address:String) -> bool{
+		for (addr,peer_tracker) in self.peers.read().unwrap().iter(){
+			if  peer_tracker.read().unwrap().address() == address { return true; }
+		}
+		false
 	}
 
 	pub fn broadcast<T:Writeable>(&mut self, message: &Message<T>){
 		for (address, mut peer) in self.peers.read().unwrap().iter(){
 			peer.write().unwrap().send(message);
-			println!("Sent Message '{:?}' to Peer: {:?}",message, peer.read().unwrap().address());
+			println!("Sent Message '{:?}' to Peer: {:?}", message, peer.read().unwrap().address());
 		}
 	}
 
@@ -101,10 +103,32 @@ impl Network {
 		self.peers.read().unwrap().len()
 	}
 	
-	pub fn add_to_address_book(&mut self, address: &mut Address) -> bool{
+	pub fn add_to_address_book(&mut self, address: &mut PeerAddress) -> bool{
 		if(self.address_book.contains(&address.string)){ return false }
 		self.address_book.insert(address.string.to_owned());
 		return true
+	}
+
+
+}
+
+
+
+impl EventSource for Network{
+	fn poll(&mut self) -> EventResult {
+		match self.poll_new_message()? {
+		    Event::Nothing => (),
+		    e => return Ok(e)
+		};
+		match self.connect_to_peers()? {
+		    Event::Nothing => (),
+		    e => return Ok(e)
+		};
+		match self.poll_new_peers()? {
+		    Event::Nothing => (),
+		    e => return Ok(e)
+		};
+		Ok(Event::Nothing)
 	}
 }
 
@@ -130,13 +154,13 @@ impl Network {
 		server
      }
 
-     pub fn address(&self) -> Address{
-     	Address::new(self.listener.local_addr().unwrap().to_string())
+     pub fn address(&self) -> PeerAddress{
+     	PeerAddress::new(self.listener.local_addr().unwrap().to_string())
      }
 
      pub fn connect_to_peer(&self, address:String) -> Option<Peer>{
      	match TcpStream::connect(address) {
-     	    Ok(tcp_stream) => {
+     	    Ok(mut tcp_stream) => {
      			println!("connected to: {:?}", tcp_stream.peer_addr().unwrap());
      	    	Some(Peer::new(tcp_stream))
      	    },
@@ -146,10 +170,9 @@ impl Network {
      
      pub fn poll_new_peer(&self) -> Option<Peer>{
      	match self.listener.accept() {
-				Ok((tcp_stream, peer_addr)) => {
+				Ok((mut tcp_stream, peer_addr)) => {
 					println!("Peer connected! {}", peer_addr);
-					let peer = Peer::new(tcp_stream);
-					Some( peer )
+					Some( Peer::new(tcp_stream) )
 				}
 				Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
 					None
@@ -161,5 +184,4 @@ impl Network {
 			}
      }
  }
-
 

@@ -1,2 +1,4 @@
 pub mod hex;
-pub mod crypto;
+pub mod serializer;
+pub mod hash;
+pub use self::hash::Hash; 

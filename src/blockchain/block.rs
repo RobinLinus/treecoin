@@ -1,12 +1,13 @@
-use blockchain::transaction::Transaction;
-use std::io::Error;
-use std::io::Read;
-use std::io::Write;
-use std::fmt;
-use network::message::{Message,Writeable,Readable};
-use std::marker::Sized;
-use blockchain::primitives::{ Hash, message_type };
+use utils::hash::Hashable;
+use utils::serializer::{ Reader, Readable, Writer, Writeable };
 
+use blockchain::transaction::Transaction;
+use std::io::{ Write, Read, Error };
+use std::fmt;
+use network::message::{ Message };
+use std::marker::Sized;
+use utils::Hash;
+use protocol::protocol::message_type;
 
 pub struct BlockHeader{
     prev: Hash,
@@ -17,21 +18,17 @@ impl BlockHeader{
     pub fn new(prev: Hash, timestamp: u32) -> BlockHeader {
         BlockHeader{prev, timestamp}
     }
-
-    pub fn to_message(self) -> Message<BlockHeader>{
-        Message::new(message_type::BLOCK, self)
-    }
 }
 
 impl Writeable for BlockHeader{
-    fn write(&self, writer: &mut Write) -> Result<(), Error>{
+    fn write(&self, writer: &mut Writer) -> Result<(), Error>{
         self.prev.write(writer);
         self.timestamp.write(writer)
     }
 }
 
 impl Readable for BlockHeader {
-    fn read(reader: &mut Read) -> Result<BlockHeader, Error>{
+    fn read(reader: &mut Reader) -> Result<BlockHeader, Error>{
         Ok(BlockHeader{
             prev: Hash::read(reader)?,
             timestamp: u32::read(reader)?
@@ -57,10 +54,15 @@ impl Block {
     pub fn add_transaction(&mut self, transaction:Transaction){
         self.transactions.push(transaction);
     }
+
+     pub fn to_message(self) -> Message<Block>{
+        Message::new(message_type::BLOCK, self)
+    }
 }
 
+
 impl Writeable for Block {
-    fn write(&self, writer: &mut Write) -> Result<(), Error>{
+    fn write(&self, writer: &mut Writer) -> Result<(), Error>{
         
         // write header
         self.header.write(writer)?;
@@ -79,7 +81,7 @@ impl Writeable for Block {
 } 
 
 impl Readable for Block {
-    fn read(reader: &mut Read) -> Result<Block, Error>{
+    fn read(reader: &mut Reader) -> Result<Block, Error>{
         // read header
         let header = BlockHeader::read(reader)?;
 
@@ -99,7 +101,7 @@ impl Readable for Block {
     }
 }
 
-
+impl Hashable for Block {}
 
 impl fmt::Debug for BlockHeader {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

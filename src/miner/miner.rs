@@ -1,10 +1,10 @@
+use protocol::event::{ EventResult, Event, EventSource };
 use std::mem::transmute;
-use blockchain::block::{Block, BlockHeader};
-use blockchain::transaction::{Transaction, TransactionOutput, TransactionInput, Address, Signature, Value};
-use blockchain::primitives::Hash;
-use utils::crypto::Crypto;
+use blockchain::block::{ Block, BlockHeader };
+use blockchain::transaction::{ Transaction, TransactionOutput, TransactionInput, Address, Signature, Value };
+use utils::Hash;
 extern crate rand;
-use rand::Rng;
+use self::rand::Rng;
 
 pub struct Miner;
 
@@ -19,19 +19,17 @@ impl Miner {
     	let random_value: u32 = rand::random();
 		if( random_value > 10000 ) { return None }
 
-		let bytes: [u8; 4] = unsafe { transmute( random_value )}; // or .to_le();
+		let bytes: [u8; 4] = unsafe { transmute( random_value )};
 
 		// build a new block
-		let hash = Crypto::hash(&bytes);
+		
 		let timestamp = 1234;
-		let block_header = BlockHeader::new(hash, timestamp);
-
-	
+		let block_header = BlockHeader::new(Hash::zeros(), timestamp);
 
 		let mut block = Block::new(block_header);
 
 
-		for i in 0..10 {
+		for i in 0..2 {
 		    let transaction_input_1: TransactionInput = rand::random();
 			let transaction_input_2: TransactionInput = rand::random();
 			let transaction_input_3: TransactionInput = rand::random();
@@ -60,4 +58,14 @@ impl Miner {
 
 		Some(block)
     }
+}
+
+impl EventSource for Miner{
+	fn poll(&mut self) -> EventResult{
+		match self.poll_new_block() {
+		    Some(block) => Ok(Event::BlockMined(block)),
+		    None => Ok(Event::Nothing),
+		}
+		
+	}
 }

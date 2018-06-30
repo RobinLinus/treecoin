@@ -1,13 +1,9 @@
+use utils::serializer::{ Reader, Readable, Writer, Writeable };
+
 use std::fmt;
 use std::hash::Hash;
-use std::io::Read;
-use network::message::Writeable;
+use std::io::{ Read, Write, Error };
 use utils::hex;
-use std::io::Write;
-
-use std::io::Error;
-
-use network::message::Readable;
 
 pub type Value = u64;
 
@@ -31,16 +27,16 @@ impl fmt::Debug for Address {
 }
 
 impl Writeable for Address {
-    fn write(&self, writer: &mut Write) -> Result<(), Error>{
-        writer.write(&self.0)?;
+    fn write(&self, writer: &mut Writer) -> Result<(), Error>{
+        writer.write_fixed_size(&self.0)?;
         Ok(())
     }
 } 
 
 impl Readable for Address {
-    fn read(reader: &mut Read) -> Result<Address, Error>{
+    fn read(reader: &mut Reader) -> Result<Address, Error>{
         let mut buf = [0u8;32];
-        reader.read_exact(&mut buf)?;
+        reader.read_fixed_size(&mut buf)?;
         Ok(Address(buf))
     }
 }
@@ -63,7 +59,7 @@ impl TransactionOutput {
     }
 }
 impl Writeable for TransactionOutput {
-    fn write(&self, writer: &mut Write) -> Result<(), Error>{
+    fn write(&self, writer: &mut Writer) -> Result<(), Error>{
         self.address.write(writer)?;
         self.value.write(writer)?;
         self.balance.write(writer)?;
@@ -72,7 +68,7 @@ impl Writeable for TransactionOutput {
 } 
 
 impl Readable for TransactionOutput {
-    fn read(reader: &mut Read) -> Result<TransactionOutput, Error>{
+    fn read(reader: &mut Reader) -> Result<TransactionOutput, Error>{
         let address = Address::read(reader)?; 
         let value = Value::read(reader)?; 
         let balance = Value::read(reader)?; 
@@ -99,16 +95,16 @@ impl fmt::Debug for Signature {
 }
 
 impl Writeable for Signature {
-    fn write(&self, writer: &mut Write) -> Result<(), Error>{
-        writer.write(&self.0)?;
+    fn write(&self, writer: &mut Writer) -> Result<(), Error>{
+        writer.write_fixed_size(&self.0)?;
         Ok(())
     }
 } 
 
 impl Readable for Signature {
-    fn read(reader: &mut Read) -> Result<Signature, Error>{
+    fn read(reader: &mut Reader) -> Result<Signature, Error>{
         let mut buf = [0u8;64];
-        reader.read_exact(&mut buf)?;
+        reader.read_fixed_size(&mut buf)?;
         Ok(Signature(buf))
     }
 }
@@ -149,7 +145,7 @@ impl Transaction {
 
 
 impl Writeable for Transaction {
-    fn write(&self, writer: &mut Write) -> Result<(), Error>{
+    fn write(&self, writer: &mut Writer) -> Result<(), Error>{
         
         // write inputs_count
         let inputs_count: u32 = self.inputs.len() as u32;
@@ -175,7 +171,7 @@ impl Writeable for Transaction {
 } 
 
 impl Readable for Transaction {
-    fn read(reader: &mut Read) -> Result<Transaction, Error>{
+    fn read(reader: &mut Reader) -> Result<Transaction, Error>{
         
         // read inputs_count
         let inputs_count: u32 = u32::read(reader)?;
