@@ -26,7 +26,8 @@ pub struct Peer {
 
 impl Peer {
 	pub fn new(mut connection: TcpStream) -> Peer {
-		connection.set_nonblocking(true).unwrap();
+        connection.set_nonblocking(true);
+		connection.set_nodelay(true);
 		Peer{
             address: connection.peer_addr().unwrap().to_string(),
             connection: Arc::new(RwLock::new(Serializer{stream:connection})),

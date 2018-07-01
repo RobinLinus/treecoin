@@ -92,4 +92,9 @@ impl Writer for HashWriter{
     	self.state.update(bytes.as_ref());
     	Ok(())
     }
+
+    fn flush(&mut self) -> Result<(), Error>{
+        // self.finalize();
+        Ok(())
+    }
 }

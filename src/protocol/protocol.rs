@@ -200,7 +200,7 @@ impl Protocol {
 
 	fn log_stats(&self){
 		// do not print every cycle 
-		if( self.cycle_count % 50000 ) != 0{ return };
+		if( self.cycle_count % 500 ) != 0{ return };
 		println!("\n\nStats: \n\tcycle_count: {:?} \n\tpeer_count: {} \n\tchain_lenght: {:?} \n\tstate_hash: {:?}", self.cycle_count , self.network.peers_count(), self.blockchain.size(), self.blockchain.root_hash());    
 	}
 }

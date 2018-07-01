@@ -29,11 +29,11 @@ impl Miner {
 
     	// Simulate mining with a dummy 
     	let random_value: u32 = rand::random();
-		if( random_value > 5000 ) { return None }
+		if( random_value > 5000000 ) { return None }
 
 		let bytes: [u8; 4] = unsafe { transmute( random_value )};
 
-		// build a new block
+		// create a dummy block
 		let timestamp = 1234;
 		let block_header = BlockHeader::new(self.state_hash, timestamp, self.difficulty_target );
 
@@ -56,8 +56,6 @@ impl EventSource for Miner{
 		
 	}
 }
-
-
 
 
 fn create_dummy_transaction() -> Transaction{

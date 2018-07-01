@@ -22,8 +22,9 @@ impl <T:Writeable>Message<T> {
 
 impl <T:Writeable> Writeable for Message<T> {
     fn write(&self, writer: &mut Writer) -> Result<(), Error>{
-        self.header.write(writer);
-        self.body.write(writer)
+        self.header.write(writer)?;
+        self.body.write(writer)?;
+        writer.flush()
     }
 }
 

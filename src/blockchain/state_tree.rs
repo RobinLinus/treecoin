@@ -25,7 +25,7 @@ impl StateTree {
         
         // insert root_node into store 
         let root_hash = root_node.hash();
-        store.insert(&root_hash, root_node);
+        store.insert(root_hash, root_node);
 
         // return a new StateTree instance
         StateTree {
@@ -40,40 +40,38 @@ impl StateTree {
         // insert next hash to the right 
         let insert_id = self.head_id + 1;
 
-        let mut curr_node = self.store.get(&self.root_hash);
-        self.store.delete(&self.root_hash);
+        let mut curr_node = self.store.get(self.root_hash);
         let mut insert_path = Vec::new();
         
         // check if we need to extend the height
         if (is_power_of_two(insert_id)){
             curr_node = StateTreeNode::new(curr_node.height + 1);
             curr_node.left = self.root_hash;
+        } else {
+            self.store.delete(self.root_hash);
         }
 
         insert_path.push(curr_node);
 
         // traverse path down to current head 
-        while curr_node.height > 2 {
+        while curr_node.height > 1 {
             if get_bit_at(insert_id, curr_node.height - 1){
                 // go right
-                if(curr_node.right == Hash::zeros()){
+                if(curr_node.right_is_empty()){
                     curr_node = StateTreeNode::new(curr_node.height - 1);
                 } else {
-                    curr_node = self.store.get(&curr_node.right);
-                    self.store.delete(&curr_node.right);
+                    curr_node = self.store.get_and_delete(curr_node.right);
                 }
             } else {
                 // go left 
-                if(curr_node.left == Hash::zeros()){
+                if(curr_node.left_is_empty()){
                     curr_node = StateTreeNode::new(curr_node.height - 1);
                 } else {
-                    curr_node = self.store.get(&curr_node.left);
-                    self.store.delete(&curr_node.left);
+                    curr_node = self.store.get_and_delete(curr_node.left);
                 }
             }
             insert_path.push(curr_node);
         }
-        
         
         // hash the new path from the leaf up to the root
         let mut curr_hash = hash;
@@ -88,7 +86,7 @@ impl StateTree {
                         curr_node.left = curr_hash;
                     }
                     curr_hash = curr_node.hash();
-                    self.store.insert(&curr_hash, curr_node);
+                    self.store.insert(curr_hash, curr_node);
                 },
                 None => break,
             }
@@ -100,11 +98,59 @@ impl StateTree {
     }
 
     pub fn revert(&mut self){
-        unimplemented!()
+        
+        let mut curr_node = self.store.get_and_delete(self.root_hash);
+        let mut insert_path = Vec::new();
+        insert_path.push(curr_node);
+
+        let delete_id = self.head_id;
+
+        // traverse down to head leaf
+        while curr_node.height > 1 {
+            if get_bit_at(delete_id, curr_node.height - 1){
+                // go right
+                curr_node = self.store.get_and_delete(curr_node.right);
+            } else {
+                // go left 
+                curr_node = self.store.get_and_delete(curr_node.left);
+            }
+            insert_path.push(curr_node);
+        }
+
+        // hash the new path from the leaf up to the root
+        let mut curr_hash = Hash::zeros();
+        loop {
+            match insert_path.pop() {
+                Some(mut curr_node) => {
+                    if get_bit_at(delete_id, curr_node.height - 1){
+                        // go right
+                        curr_node.right = curr_hash;
+                    } else {
+                        // go left
+                        curr_node.left = curr_hash;
+                    }
+                    // insert only non-zero nodes
+                    if (!curr_node.left_is_empty()) {
+                        // check if we need to decrease height 
+                        if insert_path.len() == 0 && curr_node.right_is_empty() {
+                            curr_hash = curr_node.left;
+                        } else {
+                            curr_hash = curr_node.hash();
+                            self.store.insert(curr_hash, curr_node);
+                        }
+                    }
+                },
+                None => break,
+            }
+        }
+
+        // update head 
+        self.root_hash = curr_hash;
+        self.head_id = delete_id - 1 ;
     }
 
     pub fn root_node(&self)->StateTreeNode{
-        self.store.get(&self.root_hash)
+        self.store.get(self.root_hash)
     }
 }
 
@@ -150,6 +196,14 @@ impl StateTreeNode {
             right: Hash::zeros(),
         }
     }
+
+    fn left_is_empty(&self) -> bool{
+        self.left == Hash::zeros()
+    }
+
+    fn right_is_empty(&self) -> bool{
+        self.right == Hash::zeros()
+    }
 }
 
 impl Hashable for StateTreeNode {}
@@ -164,11 +218,13 @@ impl Writeable for StateTreeNode {
 
 trait StateTreeStore {
 
-	fn get(&self, hash: &Hash) -> StateTreeNode;
+	fn get(&self, hash: Hash) -> StateTreeNode;
 
-	fn insert(&mut self, hash: &Hash, node: StateTreeNode);
+    fn get_and_delete(&mut self, hash: Hash) -> StateTreeNode;
 
-	fn delete(&mut self, hash: &Hash);
+	fn insert(&mut self, hash: Hash, node: StateTreeNode);
+
+	fn delete(&mut self, hash: Hash);
 
 }
 
@@ -184,19 +240,24 @@ impl DummyStore {
 
 impl StateTreeStore for DummyStore{
 
-    fn get(&self, hash: &Hash) -> StateTreeNode{
-        // println!("Get Key: {:?}, \n set: {:?} \n\n", hash, self.0);
-        self.0.get(hash).unwrap().clone()
+    fn get(&self, hash: Hash) -> StateTreeNode{
+        *self.0.get(&hash).unwrap()
     }
 
-    fn insert(&mut self, hash: &Hash, node: StateTreeNode){
+    fn get_and_delete(&mut self, hash: Hash) -> StateTreeNode{
+        let node = self.get(hash);
+        self.delete(hash);
+        node
+    }
+
+    fn insert(&mut self, hash: Hash, node: StateTreeNode){
         // println!("Insert Key: {:?}, Value: {:?} ", hash, node );
-        self.0.insert(*hash, node);
+        self.0.insert(hash, node);
     }
 
-    fn delete(&mut self, hash: &Hash){
+    fn delete(&mut self, hash: Hash){
         // println!("Delete Key: {:?} ", hash );
-        self.0.remove(hash);
+        self.0.remove(&hash);
     }
 } 
 
@@ -220,31 +281,25 @@ mod tests {
     #[test]
     fn insert() {
         let mut state_tree = StateTree::new(Hash::random());
-        state_tree.insert(Hash::random());
+
+        for i in [0u8;20].iter(){
+            state_tree.insert(Hash::random());
+        }
+        let hash1 = state_tree.root_hash;
         println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
 
-        state_tree.insert(Hash::random());
+        for i in [0u8;80].iter(){
+            state_tree.insert(Hash::random());
+        }
         println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
 
-        state_tree.insert(Hash::random());
+        for i in [0u8;80].iter(){
+            state_tree.revert();
+        }
+        let hash2 = state_tree.root_hash;
         println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
-
-        state_tree.insert(Hash::random());
-        println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
-
-        state_tree.insert(Hash::random());
-        println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
-
-        state_tree.insert(Hash::random());
-        println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
-
-        state_tree.insert(Hash::random());
-        println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
-
-        state_tree.insert(Hash::random());
-        println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
-
-        assert_eq!(2 + 2, 4);
+        
+        assert_eq!(hash1, hash2);
     }
 }
 

@@ -22,6 +22,6 @@ fn main() {
     loop {
         protocol.poll();
         // sleep
-		thread::sleep(time::Duration::new(0,1));
+		thread::sleep(time::Duration::from_millis(10));
     }
 }
