@@ -4,6 +4,7 @@ use std::io::{ Read, Write, Error, ErrorKind };
 use std::mem::transmute;
 use std::{thread, time};
 use std::io;
+use std::fs::File;
 
 pub trait Reader {
     fn read_fixed_size(&mut self, bytes: &mut [u8]) -> Result<(), Error>;
@@ -36,6 +37,36 @@ impl Writer for Serializer {
     }
 }
 
+
+pub struct DiscWriter{ 
+    file : File
+}
+
+impl DiscWriter {
+
+    pub fn block_writer( archive_path: &String, block_id: u32 ) -> DiscWriter {
+        let mut file_name = [
+                    archive_path,
+                    "block", 
+                    &format!("{:08}", block_id), 
+                    ".txt"].join("");
+        let mut file = File::create(&mut file_name).unwrap();
+        DiscWriter { file }
+    }
+
+}
+
+impl Writer for DiscWriter{
+
+    fn write_fixed_size(&mut self, buffer: &[u8] ) -> Result<(), Error>{
+        self.file.write_all(buffer)
+    }    
+
+    fn flush(&mut self) -> Result<(), Error>{
+        // self.stream.flush()
+        Ok(())
+    }
+}
 
 /// The default implementation of read_exact is useless with async TcpStream as
 /// it will return as soon as something has been read, regardless of

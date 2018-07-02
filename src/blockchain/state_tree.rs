@@ -20,7 +20,7 @@ impl StateTree {
         // insert genesis hash into root_node
         root_node.left = genesis_hash;
         
-        // create a store 
+        // create a store
         let mut store = DummyStore::new();
         
         // insert root_node into store 

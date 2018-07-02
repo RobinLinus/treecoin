@@ -1,3 +1,4 @@
 target
+archive
 **/*.rs.bk
 .DS_Store

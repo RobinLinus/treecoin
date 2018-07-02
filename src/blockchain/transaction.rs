@@ -9,9 +9,29 @@ use utils::hex;
 
 pub type Value = u64;
 
-pub type TransactionInput = u64;
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
+pub struct TransactionInput {
+    pub block_id : u32,
+    pub transaction_id : u32,
+}
 
-#[derive(Clone, Copy)]
+impl Readable for TransactionInput{
+    fn read(reader: &mut Reader) -> Result<TransactionInput, Error>{
+        Ok(TransactionInput{
+                block_id : u32::read(reader)?,
+                transaction_id : u32::read(reader)? 
+            })
+    }
+}
+
+impl Writeable for TransactionInput {
+    fn write(&self, writer: &mut Writer) -> Result<(), Error>{
+        self.block_id.write(writer)?;
+        self.transaction_id.write(writer)
+    }
+} 
+
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Address([u8;32]);
 
 impl Address{
@@ -45,7 +65,7 @@ impl Readable for Address {
 }
 
 
-
+#[derive(Clone, Copy)]
 pub struct TransactionOutput {
     pub address: Address,
     pub value: Value,
@@ -139,7 +159,7 @@ impl Transaction {
     }
 
     pub fn add_signature(&mut self, signature:Signature) {
-        // self.signaturees.push(signature)
+        self.signature = signature;
     }
 
     pub fn sum_output_values(&self) -> Value {

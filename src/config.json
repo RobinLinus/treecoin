@@ -1,0 +1,18 @@
+{
+	"seed_nodes" : [ 
+		"127.0.0.1:7000" 
+	],
+	"services" : {
+		
+		"LiveNode" : {
+			"ip_address" : "localhost",
+			"port" : 7000
+		},
+
+		"ArchiveNode" : {
+			"ip_address" : "localhost",
+			"port" : 8000
+		}
+		
+	}
+}

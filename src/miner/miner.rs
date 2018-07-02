@@ -8,7 +8,8 @@ use self::rand::Rng;
 
 pub struct Miner{
 	state_hash: Hash,
-	difficulty_target : u32
+	difficulty_target : u32,
+	is_active: bool
 }
 
 impl Miner {
@@ -16,7 +17,8 @@ impl Miner {
 	pub fn new() -> Miner{
 		Miner {
 			state_hash:Hash::zeros(),
-			difficulty_target: 0
+			difficulty_target: 0,
+			is_active : true
 		}
 	}
 
@@ -26,6 +28,7 @@ impl Miner {
 	}
 	
     pub fn poll_new_block(&self) -> Option<Block>{
+    	if !self.is_active { return None }
 
     	// Simulate mining with a dummy 
     	let random_value: u32 = rand::random();
@@ -45,6 +48,14 @@ impl Miner {
 
 		Some(block)
     }
+
+    pub fn start(&mut self){
+    	self.is_active = true
+    }
+
+    pub fn stop(&mut self){
+    	self.is_active = false
+    }
 }
 
 impl EventSource for Miner{
@@ -59,9 +70,10 @@ impl EventSource for Miner{
 
 
 fn create_dummy_transaction() -> Transaction{
-	let transaction_input_1: TransactionInput = rand::random();
-	let transaction_input_2: TransactionInput = rand::random();
-	let transaction_input_3: TransactionInput = rand::random();
+	let transaction_input_1 = TransactionInput{ block_id: rand::random(), transaction_id:rand::random() };
+	let transaction_input_2 = TransactionInput{ block_id: rand::random(), transaction_id:rand::random() };
+	let transaction_input_3 = TransactionInput{ block_id: rand::random(), transaction_id:rand::random() };
+
 
 	let value_1: Value = rand::random();
 	let balance_1: Value = rand::random();
@@ -75,7 +87,7 @@ fn create_dummy_transaction() -> Transaction{
 	let address_2 = Address::new(address_2);
 	let transaction_output_2 = TransactionOutput::new(address_2,value_2,balance_2);
 
-	let signature = Signature::new([0u8;64]);
+	let signature = Signature::new([255u8;64]);
 
 	let inputs = vec![transaction_input_1,transaction_input_2,transaction_input_3];
 	let outputs = vec![transaction_output_1,transaction_output_2];

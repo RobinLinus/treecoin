@@ -114,13 +114,15 @@ impl Writeable for PeerAddress{
 
 #[derive(Debug)]
 pub struct PeerInfo {
-    pub server_address: PeerAddress
+    pub server_address: PeerAddress,
+    pub chain_height: u32,
 }
 
 impl PeerInfo {
-    pub fn new(server_address: PeerAddress) -> PeerInfo{
+    pub fn new(server_address: PeerAddress, chain_height: u32) -> PeerInfo{
         PeerInfo{
-            server_address
+            server_address,
+            chain_height
         }
     }
 
@@ -132,6 +134,7 @@ impl PeerInfo {
 impl Writeable for PeerInfo {
     fn write(&self, writer: &mut Writer) -> Result<(), Error>{
         self.server_address.write(writer)?;
+        self.chain_height.write(writer)?;
         Ok(())
     }
 } 
@@ -139,7 +142,8 @@ impl Writeable for PeerInfo {
 impl Readable for PeerInfo{
     fn read(reader: &mut Reader) -> Result<PeerInfo, Error>{
         Ok( PeerInfo{ 
-            server_address: PeerAddress::read(reader)?
+            server_address: PeerAddress::read(reader)?,
+            chain_height: u32::read(reader)?
         })
     }
 }

@@ -1,3 +1,4 @@
+use protocol::protocol_config::ProtocolConfig;
 use utils::serializer::{ Reader, Readable, Writer, Writeable };
 use network::peer::{ Peer, PeerTracker, PeerChannel, PeerAddress };
 use network::message::{ Message, MessageHeader, EmptyMessageBody };
@@ -21,12 +22,12 @@ pub struct Network {
 
 impl Network {
 
-	pub fn new(seed_nodes : Vec<String>) -> Network {
+	pub fn new(config: &ProtocolConfig) -> Network {
 	    Network{
 	    	peers: RwLock::new(HashMap::new()),
 	    	peers_count_target: 10,
-	    	server: Server::new(),
-	    	address_book : seed_nodes.iter().cloned().collect()
+	    	server: Server::new(config.get_live_address()),
+	    	address_book : config.seed_nodes.iter().cloned().collect()
 	    }
 	}
 
@@ -139,15 +140,8 @@ impl EventSource for Network{
  }
 
  impl Server {
-     fn new() -> Server {
-     	let addrs = [
-    		SocketAddr::from(([127,0,0,1], 7000)),
-    		SocketAddr::from(([127,0,0,1], 7001)),
-    		SocketAddr::from(([127,0,0,1], 7002)),
-    		SocketAddr::from(([127,0,0,1], 7003)),
-    		SocketAddr::from(([127,0,0,1], 7004)),
-		];
-     	let listener = TcpListener::bind(&addrs[..]).unwrap();
+     fn new( socket_address: String ) -> Server {
+     	let listener = TcpListener::bind(socket_address).unwrap();
 		listener.set_nonblocking(true).unwrap();
 		let server = Server{ listener };
 		println!("Server listening on {:?}", server.address() );
