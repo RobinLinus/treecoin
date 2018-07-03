@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use protocol::event::{ EventResult, Event, EventSource };
-use std::mem::transmute;
 use blockchain::block::{ Block, BlockHeader };
 use blockchain::transaction::{ Transaction, TransactionOutput, TransactionInput, Address };
 use utils::Hash;
@@ -38,37 +37,35 @@ impl Miner {
 
     	// Simulate mining with a dummy 
     	let random_value: u32 = rand::random();
-		if( random_value > 5000000 ) { return None }
-
-		let bytes: [u8; 4] = unsafe { transmute( random_value ) };
+		if random_value > 5000000 { return None }
 
 		// create a dummy block
 		let timestamp = 1234;
 		let block_header = BlockHeader::new( self.state_hash, timestamp, self.difficulty_target );
 
-		let mut block = self.compose_block( block_header );
+		let block = self.compose_block( block_header );
 
 		Some( block )
     }
 
-    pub fn add_transaction_to_pool( &mut self, mut transaction : Transaction ){
+    pub fn add_transaction_to_pool( &mut self, transaction : Transaction ){
     	self.transactions_pool.add( transaction );
     }
 
-    pub fn on_block( &mut self, block : Block ){
+    pub fn on_block( &mut self, block : &mut Block ){
+        self.update_head(block.header.state, block.header.difficulty_target);
     	
     	// collect all spent inputs 
 		let mut spend_inputs = Vec::new();
-    	for transaction in block.transactions {
-			for input in transaction.inputs {
+    	for transaction in &mut block.transactions {
+			for input in &mut transaction.inputs {
 				spend_inputs.push(input);
 			}
     	}
 
         // delete the spent inputs
-    	let mut index = 0;
         for spend_input in &mut spend_inputs {
-            self.transactions_pool.delete_by_input(*spend_input);
+            self.transactions_pool.delete_by_input(**spend_input);
         }
     }
 
@@ -99,13 +96,13 @@ impl Miner {
     }
 
 
-    pub fn start(&mut self){
-    	self.is_active = true
-    }
+    // pub fn start(&mut self){
+    // 	self.is_active = true
+    // }
 
-    pub fn stop(&mut self){
-    	self.is_active = false
-    }
+    // pub fn stop(&mut self){
+    // 	self.is_active = false
+    // }
 
     pub fn pool_count(&self) -> usize { 
         self.transactions_pool.count()
@@ -140,17 +137,19 @@ impl TransactionsPool {
 
     pub fn delete_by_input( &mut self, input : TransactionInput ) {
         
-        let index = match self.input_index.get(&input) {
+        let index = match self.input_index.get( &input ) {
             Some(index) => *index,
             None => return,
         };
 
-        self.pool.remove( index ); 
-        let transaction = self.pool.get(index).unwrap();
-        // delete indexes 
-        for input in &transaction.inputs {
-            self.input_index.remove( &input );
+        {
+            let transaction = self.pool.get(index).unwrap();
+            // delete indexes 
+            for input in &transaction.inputs {
+                self.input_index.remove( &input );
+            }
         }
+        self.pool.remove( index ); 
     }
 
 

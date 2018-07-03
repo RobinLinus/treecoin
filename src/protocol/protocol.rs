@@ -42,8 +42,8 @@ pub mod message_type {
 	pub const VER: 				u32 = 1;
 	pub const VER_ACK: 			u32 = 2;
 	pub const ADDRESS: 			u32 = 3;
-	pub const GET_BLOCKS: 		u32 = 4;
-	pub const INV: 				u32 = 5;
+	// pub const GET_BLOCKS: 		u32 = 4;
+	// pub const INV: 				u32 = 5;
 	pub const BLOCK: 			u32 = 6;
 	pub const TRANSACTION: 		u32 = 7;
 }
@@ -134,7 +134,7 @@ impl Protocol {
 		// don't re-broadcast our own address
 		if address.string == self.network.server.address().string{ return Ok(Event::Nothing); }
 		
-		self.network.broadcast(&address.to_message());
+		self.network.broadcast(&address.to_message())?;
 
 		Ok(Event::Nothing)
 	}
@@ -150,7 +150,7 @@ impl Protocol {
     	    Err(e) => println!("\nVerification Error: {:?}", e),
     	};
     	self.blockchain.apply_block(&mut block)?;
-    	self.miner.update_head(self.blockchain.root_hash(), self.blockchain.difficulty_target);
+    	self.miner.on_block(&mut block);
     	block.write( &mut DiscWriter::block_writer(&self.config.archive_path, self.blockchain.size() ))?;
 
     	Ok(Event::Nothing)
@@ -160,7 +160,7 @@ impl Protocol {
 		self.blockchain.apply_block( &mut block )?;
 		self.miner.update_head( self.blockchain.root_hash(), self.blockchain.difficulty_target );
 		block.write( &mut DiscWriter::block_writer( &self.config.archive_path, self.blockchain.size()))?;
-		self.network.broadcast( &block.to_message() );
+		self.network.broadcast( &block.to_message() )?;
 		Ok(Event::Nothing)
 	}
 
@@ -177,30 +177,30 @@ impl Protocol {
 
 	fn on_transaction(&mut self, transaction: Transaction) -> EventResult {
 		let message = Message::new( message_type::TRANSACTION, transaction );
-		self.network.broadcast( &message );
+		self.network.broadcast( &message )?;
 		self.miner.add_transaction_to_pool( message.get_body() );
 		Ok(Event::Nothing)
 	}
  
-	fn on_too_many_peers(&mut self){
-		unimplemented!()
-	}
+	// fn on_too_many_peers(&mut self){
+	// 	unimplemented!()
+	// }
 
-	fn on_peer_disconnect(&mut self){
-		unimplemented!()
-	}
+	// fn on_peer_disconnect(&mut self){
+	// 	unimplemented!()
+	// }
 	
-	fn on_too_few_peers(&mut self){
-		unimplemented!()
-	}
+	// fn on_too_few_peers(&mut self){
+	// 	unimplemented!()
+	// }
 
-	fn on_sync_start(&mut self){
+	// fn on_sync_start(&mut self){
 		
-	}
+	// }
 
-	fn on_sync_complete(&mut self){
-		self.miner.start();
-	}
+	// fn on_sync_complete(&mut self){
+	// 	self.miner.start();
+	// }
 
 	// boilerplate
 	pub fn new(config: ProtocolConfig, genesis_block: Block) -> Protocol{

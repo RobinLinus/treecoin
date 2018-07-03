@@ -14,7 +14,7 @@ use blockchain::transaction::TransactionOutput;
 
 pub struct Blockchain {
     unspent_outputs: UnspentOutputs,
-    chain_head: Block,
+    // chain_head: Block,
     state_tree : StateTree,
     pub difficulty_target : u32
 }
@@ -96,7 +96,7 @@ impl Blockchain {
         // verify: inputs_sum - outputs_sum > 0 ( no coins out-of-thin-air )
         if outputs_sum > inputs_sum  { return Err( Error::InvalidCoinSum ); }
     	
-        let fees = inputs_sum - outputs_sum; 
+        // let fees = inputs_sum - outputs_sum; 
 
     	// verify signature
     	transaction.signature.verify_multi_sig(input_keys)?;
@@ -108,7 +108,7 @@ impl Blockchain {
         Blockchain {
             state_tree : StateTree::new(genesis_block.hash()),
             difficulty_target : genesis_block.header.difficulty_target,
-            chain_head : genesis_block,
+            // chain_head : genesis_block,
             unspent_outputs : UnspentOutputs(HashMap::new())
         }
     }

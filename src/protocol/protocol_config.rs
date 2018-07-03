@@ -1,7 +1,9 @@
 extern crate serde;
 extern crate serde_json;
 
+use blockchain::block::{ Block, BlockHeader };
 use blockchain::transaction::Address;
+use utils::Hash;
 use std::path::Path;
 use std::collections::HashMap;
 use std::error::Error;
@@ -48,5 +50,9 @@ impl ProtocolConfig {
 
 	pub fn get_miner_address(&self) -> Address {
 		Address::from_hex(self.miner_address.to_string())
+	}
+
+	pub fn get_genesis_block() -> Block{
+		Block::new(BlockHeader::new( Hash::zeros(), 0, 8888) )
 	}
 }

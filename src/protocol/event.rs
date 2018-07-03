@@ -1,14 +1,12 @@
 use blockchain::transaction::Transaction;
 use network::peer::{ PeerChannel, PeerTracker };
 use blockchain::block::Block;
-use network::message::MessageHeader;
+
 use std::io;
 use std::error;
 use std::fmt;
-use std::sync;
 
 pub enum Event {
-	TooFewPeers(u32),
 	IncommingPeer(PeerTracker),
 	OutgoingPeer(PeerTracker),
 	MessageHeader(PeerChannel),
@@ -45,7 +43,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::Io(ref err) => write!(f, "IO error: {}", err),
+            Error::Io(ref err) => write!(f, "IO error: {:?}", err),
             Error::InvalidInput => write!(f, "InvalidInput Error"),
             Error::StateMissMatch => write!(f, "StateMissMatch Error"),
             Error::InvalidDifficulty => write!(f, "InvalidDifficulty Error"),

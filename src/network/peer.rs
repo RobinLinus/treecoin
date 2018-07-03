@@ -23,17 +23,17 @@ pub struct Peer {
 
 impl Peer {
 	pub fn new(connection: TcpStream) -> Peer {
-        connection.set_nonblocking(true);
-		connection.set_nodelay(true);
+        connection.set_nonblocking(true).unwrap();
+		connection.set_nodelay(true).unwrap();
 		Peer{
             address: connection.peer_addr().unwrap().to_string(),
             connection: Arc::new(RwLock::new(Serializer{stream:connection})),
 		}
 	}
 
-    pub fn send<T: Writeable>(&mut self, message: &Message<T>){
+    pub fn send<T: Writeable>(&mut self, message: &Message<T>)->Result<(), Error>{
     	let mut connection = self.connection.write().unwrap();
-    	message.write(&mut *connection);
+    	message.write(&mut *connection)
     }
  
     pub fn receive(&mut self)->Option<MessageHeader>{

@@ -164,8 +164,7 @@ fn is_power_of_two(input: u32) -> bool {
 }
 
 fn get_bit_at(input: u32, index: u8) -> bool {
-    if index < 32 {
-        // let index = 31 - index; 
+    if index < 32 { 
         input & (1 << index) != 0
     } else {
         false

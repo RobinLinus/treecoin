@@ -1,3 +1,4 @@
+use protocol::event::Error;
 use protocol::protocol_config::ProtocolConfig;
 use utils::serializer::{ Writeable };
 use utils::hash::Hashable;
@@ -7,7 +8,6 @@ use protocol::event::{ EventSource, EventResult, Event };
 use std::sync::{ RwLock };
 use std::collections::{ HashSet, HashMap };
 use std::io;
-use std::io::{ Error };
 use std::net::{ TcpListener, TcpStream };
 
 
@@ -88,15 +88,16 @@ impl Network {
 		false
 	}
 
-	pub fn broadcast<T:Writeable>( &mut self, message: &Message<T> ){
+	pub fn broadcast<T:Writeable>( &mut self, message: &Message<T> ) -> Result<(),Error>{
 		let hash = message.hash().to_u64();
 		if !self.message_history.contains(&hash) {
 	    	self.message_history.insert(hash);
 			for (_address, mut peer) in self.peers.read().unwrap().iter(){
-				peer.write().unwrap().send(message);
+				peer.write().unwrap().send(message)?;
 				// println!("Sent Message '{:?}' to Peer: {:?}", message, peer.read().unwrap().address());
 			}
 		}
+		Ok(())
 	}
 
 	pub fn peers_count(&self) -> usize{

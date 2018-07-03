@@ -175,9 +175,9 @@ impl Transaction {
         }
     } 
 
-    pub fn fee() -> Value {
-        unimplemented!();
-    }
+    // pub fn fee() -> Value {
+    //     unimplemented!();
+    // }
 
     pub fn add_signature(&mut self, signature:Signature) {
         self.signature = signature;
