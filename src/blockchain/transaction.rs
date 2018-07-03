@@ -4,8 +4,7 @@ use protocol::event::Event;
 pub use utils::serializer::{ Reader, Readable, Writer, Writeable };
 
 use std::fmt;
-use std::hash::Hash;
-use std::io::{ Read, Write, Error };
+use std::io::{ Error };
 use utils::hex;
 
 pub type Value = u64;
@@ -132,7 +131,7 @@ impl Signature{
         hex::to_hex(self.0.to_vec())
     }
 
-    pub fn verify_multi_sig(&self, addresses: Vec<Address>)  -> EventResult {
+    pub fn verify_multi_sig(&self, _addresses: Vec<Address>)  -> EventResult {
         // Todo: implement multi signature verification...
         Ok(Event::Nothing)
     }
@@ -233,7 +232,7 @@ impl Readable for Transaction {
         
         // read all inputs  
         let mut inputs = Vec::new();
-        for input in 0..inputs_count {
+        for _ in 0..inputs_count {
             inputs.push(TransactionInput::read(reader)?);
         }
 
@@ -242,7 +241,7 @@ impl Readable for Transaction {
         
         // read all outputs  
         let mut outputs = Vec::new();
-        for output in 0..outputs_count {
+        for _ in 0..outputs_count {
             outputs.push(TransactionOutput::read(reader)?);
         }
 
@@ -262,7 +261,7 @@ impl Hashable for Transaction {}
 
 impl fmt::Debug for TransactionOutput {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "\nOutput:\n\t{:?}\n\t{:?}\t{:?}\n", self.address, self.value, self.balance)
+        write!(f, "\nOutput:\n\taddress: {:?}\n\tvalue: {:?}\tbalance: {:?}\n", self.address, self.value, self.balance)
     }
 }
 

@@ -1,13 +1,9 @@
 extern crate serde;
 extern crate serde_json;
 
-// #[macro_use]
-// extern crate serde_derive;
-
 use blockchain::transaction::Address;
 use std::path::Path;
 use std::collections::HashMap;
-use self::serde_json::Error as OtherError;
 use std::error::Error;
 use std::fs::File;
 

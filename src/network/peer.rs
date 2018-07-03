@@ -22,7 +22,7 @@ pub struct Peer {
 }
 
 impl Peer {
-	pub fn new(mut connection: TcpStream) -> Peer {
+	pub fn new(connection: TcpStream) -> Peer {
         connection.set_nonblocking(true);
 		connection.set_nodelay(true);
 		Peer{
@@ -41,7 +41,7 @@ impl Peer {
     	
     	match MessageHeader::read(&mut *connection){
     		Ok(message_header) => Some(message_header),
-    		Err( e ) => None
+    		Err( _ ) => None
     	}
     }
 

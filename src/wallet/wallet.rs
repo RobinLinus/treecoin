@@ -1,9 +1,7 @@
-use protocol::event::{ Event, EventResult,EventSource };
-use blockchain::block::{ Block, BlockHeader };
+use protocol::event::{ Event, EventResult };
 use blockchain::transaction::{ Transaction, TransactionOutput, TransactionInput, Address, Signature, Value };
 use blockchain::blockchain::Blockchain;
 extern crate rand;
-use self::rand::Rng;
 
 
 pub struct Wallet;
@@ -14,9 +12,9 @@ impl Wallet{
 		Wallet {}
 	}
 
-	pub fn poll_new_transaction( &self, blockchain: &Blockchain ) -> EventResult{
+	pub fn poll_new_transaction( &self, _blockchain: &Blockchain ) -> EventResult{
 		let random_value: u32 = rand::random();
-		if( random_value > 10000000 ) { return Ok(Event::Nothing) }
+		if random_value > 10000000 { return Ok(Event::Nothing) }
 		Ok( Event::Transaction(create_dummy_transaction() ))
 	}
 }

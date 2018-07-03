@@ -1,6 +1,6 @@
 use std::net::TcpStream;
 use std::fmt::Debug;
-use std::io::{ Read, Write, Error, ErrorKind };
+use std::io::{ Read, Write, Error };
 use std::mem::transmute;
 use std::{thread, time};
 use std::io;
@@ -38,7 +38,7 @@ impl Writer for Serializer {
 }
 
 
-pub struct DiscWriter{ 
+pub struct DiscWriter { 
     file : File
 }
 
@@ -50,7 +50,7 @@ impl DiscWriter {
                     "block", 
                     &format!("{:08}", block_id), 
                     ".txt"].join("");
-        let mut file = File::create(&mut file_name).unwrap();
+        let file = File::create(&mut file_name).unwrap();
         DiscWriter { file }
     }
 
@@ -182,6 +182,8 @@ where
     fn read(reader: &mut Reader) -> Result<Self, Error>;
 }
 
+// Serialization for simple types 
+
 impl Writeable for u8{
      fn write(&self, writer: &mut Writer) -> Result<(), Error>{
         let bytes = unsafe { transmute::<u8, [u8;1]>(*self) };
@@ -192,13 +194,8 @@ impl Writeable for u8{
 impl Readable for u8{
     fn read(reader: &mut Reader) -> Result<u8, Error>{
         let mut bytes = [0u8;1];
-        match reader.read_fixed_size(&mut bytes) {
-            Ok(expr) => {
-                let u_8: u8 = unsafe { transmute::<[u8;1], u8>(bytes) };
-                Ok(u_8)
-            },
-            Err(e) => Err(e),
-        }
+        reader.read_fixed_size(&mut bytes)?;
+        Ok(unsafe { transmute::<[u8;1], u8>(bytes) })
     }
 }
 
@@ -212,13 +209,8 @@ impl Writeable for u16{
 impl Readable for u16{
     fn read(reader: &mut Reader) -> Result<u16, Error>{
         let mut bytes = [0u8;2];
-        match reader.read_fixed_size(&mut bytes) {
-            Ok(expr) => {
-                let u_16: u16 = unsafe { transmute::<[u8;2], u16>(bytes) };
-                Ok(u_16)
-            },
-            Err(e) => Err(e),
-        }
+        reader.read_fixed_size(&mut bytes)?;
+        Ok(unsafe { transmute::<[u8;2], u16>(bytes) })
     }
 }
 
@@ -232,13 +224,8 @@ impl Writeable for u32{
 impl Readable for u32{
     fn read(reader: &mut Reader) -> Result<u32, Error>{
         let mut bytes = [0u8;4];
-        match reader.read_fixed_size(&mut bytes) {
-            Ok(expr) => {
-                let u_32: u32 = unsafe { transmute::<[u8;4], u32>(bytes) };
-                Ok(u_32)
-            },
-            Err(e) => Err(e),
-        }
+        reader.read_fixed_size(&mut bytes)?;
+        Ok( unsafe { transmute::<[u8;4], u32>(bytes) } )
     }
 }
 
@@ -252,13 +239,8 @@ impl Writeable for u64{
 impl Readable for u64{
     fn read(reader: &mut Reader) -> Result<u64, Error>{
         let mut bytes = [0u8;8];
-        match reader.read_fixed_size(&mut bytes) {
-            Ok(expr) => {
-                let u_64: u64 = unsafe { transmute::<[u8;8], u64>(bytes) };
-                Ok(u_64)
-            },
-            Err(e) => Err(e),
-        }
+        reader.read_fixed_size(&mut bytes)?;
+        Ok( unsafe { transmute::<[u8;8], u64>(bytes) })
     }
 }
 

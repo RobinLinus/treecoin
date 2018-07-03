@@ -35,7 +35,6 @@ pub trait EventListener {
 
 #[derive(Debug)]
 pub enum Error {
-	Example, 
 	InvalidInput,	
 	StateMissMatch,
 	InvalidDifficulty,
@@ -47,7 +46,6 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Io(ref err) => write!(f, "IO error: {}", err),
-            Error::Example => write!(f, "Example Error"),
             Error::InvalidInput => write!(f, "InvalidInput Error"),
             Error::StateMissMatch => write!(f, "StateMissMatch Error"),
             Error::InvalidDifficulty => write!(f, "InvalidDifficulty Error"),
@@ -60,7 +58,6 @@ impl error::Error for Error {
 	fn cause( &self ) -> Option<&error::Error> {
         match *self {
             Error::Io(ref err) => Some(err),
-            Error::Example => None,
             Error::InvalidInput => None,
             _ => None
         }

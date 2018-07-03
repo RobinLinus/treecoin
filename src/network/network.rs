@@ -1,17 +1,15 @@
 use protocol::protocol_config::ProtocolConfig;
-use utils::serializer::{ Reader, Readable, Writer, Writeable };
+use utils::serializer::{ Writeable };
 use utils::hash::Hashable;
 use network::peer::{ Peer, PeerTracker, PeerChannel, PeerAddress };
-use network::message::{ Message, MessageHeader, EmptyMessageBody };
+use network::message::{ Message };
 use protocol::event::{ EventSource, EventResult, Event };
-use protocol::protocol::message_type;
-use std::sync::{ Arc, RwLock };
+use std::sync::{ RwLock };
 use std::collections::{ HashSet, HashMap };
 use std::io;
-use std::io::{ Read, Write, Error };
-use std::{ thread, time };
-use std::net::{ Shutdown, SocketAddr, TcpListener, TcpStream };
-use std::str;
+use std::io::{ Error };
+use std::net::{ TcpListener, TcpStream };
+
 
 
 pub struct Network {
@@ -34,14 +32,8 @@ impl Network {
 	    }
 	}
 
-	pub fn send_to_peer<T:Writeable>(&mut self, address:String, message: Message<T>)-> Result<(), Error>{
-		let mut peers = self.peers.read().unwrap();
-		peers.get(&address).unwrap().write().unwrap().send(&message);
-		Ok(())
-	}
-
 	pub fn poll_new_message(&mut self) -> EventResult {
-	    for (address, peer) in self.peers.read().unwrap().iter(){
+	    for ( _address, peer) in self.peers.read().unwrap().iter(){
 			match peer.write().unwrap().receive() {
 			    Some(message_header) => return Ok(Event::MessageHeader(
 			    	PeerChannel{
@@ -71,7 +63,7 @@ impl Network {
 
 	fn connect_to_peers(&mut self) -> EventResult{
 
-		if (self.peers.read().unwrap().len() > self.peers_count_target) { return Ok(Event::Nothing); }
+		if self.peers.read().unwrap().len() > self.peers_count_target { return Ok(Event::Nothing); }
 		// for each entry in our address book 
 		for address in &mut (self.address_book).iter(){
 			// is not yet connected? 
@@ -90,7 +82,7 @@ impl Network {
 	}
 
 	fn is_connected(&self, address:String) -> bool{
-		for (addr,peer_tracker) in self.peers.read().unwrap().iter(){
+		for (_address, peer_tracker) in self.peers.read().unwrap().iter(){
 			if  peer_tracker.read().unwrap().address() == address { return true; }
 		}
 		false
@@ -100,7 +92,7 @@ impl Network {
 		let hash = message.hash().to_u64();
 		if !self.message_history.contains(&hash) {
 	    	self.message_history.insert(hash);
-			for (address, mut peer) in self.peers.read().unwrap().iter(){
+			for (_address, mut peer) in self.peers.read().unwrap().iter(){
 				peer.write().unwrap().send(message);
 				// println!("Sent Message '{:?}' to Peer: {:?}", message, peer.read().unwrap().address());
 			}
@@ -112,7 +104,7 @@ impl Network {
 	}
 	
 	pub fn add_to_address_book(&mut self, address: &mut PeerAddress) -> bool{
-		if(self.address_book.contains(&address.string)){ return false }
+		if self.address_book.contains(&address.string) { return false }
 		self.address_book.insert(address.string.to_owned());
 		return true
 	}
@@ -147,6 +139,7 @@ impl EventSource for Network{
  }
 
  impl Server {
+ 	
      fn new( socket_address: String ) -> Server {
      	let listener = TcpListener::bind(socket_address).unwrap();
 		listener.set_nonblocking(true).unwrap();
@@ -155,15 +148,15 @@ impl EventSource for Network{
 		server
      }
 
-     pub fn address(&self) -> PeerAddress{
-     	PeerAddress::new(self.listener.local_addr().unwrap().to_string())
+     pub fn address(&self) -> PeerAddress {
+     	PeerAddress::new( self.listener.local_addr().unwrap().to_string() )
      }
 
      pub fn connect_to_peer(&self, address:String) -> Option<Peer>{
      	match TcpStream::connect(address) {
-     	    Ok(mut tcp_stream) => {
-     			println!("connected to: {:?}", tcp_stream.peer_addr().unwrap());
-     	    	Some(Peer::new(tcp_stream))
+     	    Ok(tcp_stream) => {
+     			println!("Outgoing peer: {:?}", tcp_stream.peer_addr().unwrap() );
+     	    	Some( Peer::new(tcp_stream) )
      	    },
      	    Err( _ ) => None,
      	}     	
@@ -171,18 +164,18 @@ impl EventSource for Network{
      
      pub fn poll_new_peer(&self) -> Option<Peer>{
      	match self.listener.accept() {
-				Ok((mut tcp_stream, peer_addr)) => {
-					println!("Peer connected! {}", peer_addr);
-					Some( Peer::new(tcp_stream) )
-				}
-				Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-					None
-				}
-				Err(e) => {
-					println!("Couldn't establish new client connection: {:?}", e);
-					None
-				}
+			Ok( (tcp_stream, peer_addr) ) => {
+				println!("Incoming peer: {}", peer_addr);
+				Some( Peer::new(tcp_stream) )
 			}
+			Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+				None
+			}
+			Err(e) => {
+				println!("Couldn't establish new client connection: {:?}", e);
+				None
+			}
+		}
      }
  }
 

@@ -114,28 +114,10 @@ impl Protocol {
 		Ok(Event::Nothing)
 	}
 
-	fn on_peer_info_acknowledged_message( &mut self, channel: PeerChannel ) -> EventResult{
+	fn on_peer_info_acknowledged_message( &mut self, channel: PeerChannel ) -> EventResult {
 		let peer = channel.peer.write().unwrap();
 		println!(">> Acknowledged: {:?}", peer.address());
 		Ok(Event::Nothing)
-	}
-
-
-    fn on_block_message( &mut self, channel:PeerChannel ) -> EventResult {
-		let peer = channel.peer.write().unwrap();
-		let mut conn = peer.connection.write().unwrap();
-		let mut block = Block::read(&mut *conn)?;
-			    
-    	println!(">> Received: {:?}", block);
-    	match self.blockchain.verify_block(&mut block) {
-    	    Ok( _ ) => (),
-    	    Err(e) => println!("\nVerification Error: {:?}", e),
-    	};
-    	self.blockchain.apply_block(&mut block)?;
-    	self.miner.update_head(self.blockchain.root_hash(), self.blockchain.difficulty_target);
-    	block.write( &mut DiscWriter::block_writer(&self.config.archive_path, self.blockchain.size() ))?;
-
-    	Ok(Event::Nothing)
 	}
 
 	fn on_address_message( &mut self, channel: PeerChannel ) -> EventResult {
@@ -157,7 +139,24 @@ impl Protocol {
 		Ok(Event::Nothing)
 	}
 
-    fn on_block_mined( &mut self, mut block: Block ) -> EventResult {
+    fn on_block_message( &mut self, channel: PeerChannel ) -> EventResult {
+		let peer = channel.peer.write().unwrap();
+		let mut conn = peer.connection.write().unwrap();
+		let mut block = Block::read(&mut *conn)?;
+			    
+    	println!(">> Received: {:?}", block);
+    	match self.blockchain.verify_block(&mut block) {
+    	    Ok( _ ) => (),
+    	    Err(e) => println!("\nVerification Error: {:?}", e),
+    	};
+    	self.blockchain.apply_block(&mut block)?;
+    	self.miner.update_head(self.blockchain.root_hash(), self.blockchain.difficulty_target);
+    	block.write( &mut DiscWriter::block_writer(&self.config.archive_path, self.blockchain.size() ))?;
+
+    	Ok(Event::Nothing)
+	}
+
+	fn on_block_mined( &mut self, mut block: Block ) -> EventResult {
 		self.blockchain.apply_block( &mut block )?;
 		self.miner.update_head( self.blockchain.root_hash(), self.blockchain.difficulty_target );
 		block.write( &mut DiscWriter::block_writer( &self.config.archive_path, self.blockchain.size()))?;
