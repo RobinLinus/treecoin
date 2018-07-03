@@ -1,5 +1,6 @@
 use protocol::protocol_config::ProtocolConfig;
 use utils::serializer::{ Reader, Readable, Writer, Writeable };
+use utils::hash::Hashable;
 use network::peer::{ Peer, PeerTracker, PeerChannel, PeerAddress };
 use network::message::{ Message, MessageHeader, EmptyMessageBody };
 use protocol::event::{ EventSource, EventResult, Event };
@@ -17,7 +18,8 @@ pub struct Network {
     peers: RwLock<HashMap<String, PeerTracker>>,
     peers_count_target: usize,
     pub server: Server,
-    address_book : HashSet<String>
+    address_book : HashSet<String>,
+    message_history : HashSet<u64>
 }
 
 impl Network {
@@ -26,8 +28,9 @@ impl Network {
 	    Network{
 	    	peers: RwLock::new(HashMap::new()),
 	    	peers_count_target: 10,
-	    	server: Server::new(config.get_live_address()),
-	    	address_book : config.seed_nodes.iter().cloned().collect()
+	    	server: Server::new( config.get_live_address() ),
+	    	address_book : config.seed_nodes.iter().cloned().collect(),
+	    	message_history : HashSet::new()
 	    }
 	}
 
@@ -93,10 +96,14 @@ impl Network {
 		false
 	}
 
-	pub fn broadcast<T:Writeable>(&mut self, message: &Message<T>){
-		for (address, mut peer) in self.peers.read().unwrap().iter(){
-			peer.write().unwrap().send(message);
-			println!("Sent Message '{:?}' to Peer: {:?}", message, peer.read().unwrap().address());
+	pub fn broadcast<T:Writeable>( &mut self, message: &Message<T> ){
+		let hash = message.hash().to_u64();
+		if !self.message_history.contains(&hash) {
+	    	self.message_history.insert(hash);
+			for (address, mut peer) in self.peers.read().unwrap().iter(){
+				peer.write().unwrap().send(message);
+				// println!("Sent Message '{:?}' to Peer: {:?}", message, peer.read().unwrap().address());
+			}
 		}
 	}
 

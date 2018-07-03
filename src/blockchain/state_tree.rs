@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std;
 use utils::Hash;
 use std::io::Error;
 use utils::hash::Hashable;
@@ -44,7 +43,7 @@ impl StateTree {
         let mut insert_path = Vec::new();
         
         // check if we need to extend the height
-        if (is_power_of_two(insert_id)){
+        if is_power_of_two(insert_id){
             curr_node = StateTreeNode::new(curr_node.height + 1);
             curr_node.left = self.root_hash;
         } else {
@@ -57,14 +56,14 @@ impl StateTree {
         while curr_node.height > 1 {
             if get_bit_at(insert_id, curr_node.height - 1){
                 // go right
-                if(curr_node.right_is_empty()){
+                if curr_node.right_is_empty(){
                     curr_node = StateTreeNode::new(curr_node.height - 1);
                 } else {
                     curr_node = self.store.get_and_delete(curr_node.right);
                 }
             } else {
                 // go left 
-                if(curr_node.left_is_empty()){
+                if curr_node.left_is_empty(){
                     curr_node = StateTreeNode::new(curr_node.height - 1);
                 } else {
                     curr_node = self.store.get_and_delete(curr_node.left);
@@ -130,7 +129,7 @@ impl StateTree {
                         curr_node.left = curr_hash;
                     }
                     // insert only non-zero nodes
-                    if (!curr_node.left_is_empty()) {
+                    if !curr_node.left_is_empty() {
                         // check if we need to decrease height 
                         if insert_path.len() == 0 && curr_node.right_is_empty() {
                             curr_hash = curr_node.left;
@@ -149,15 +148,9 @@ impl StateTree {
         self.head_id = delete_id - 1 ;
     }
 
-    pub fn root_node(&self)->StateTreeNode{
+    pub fn root_node(&self) -> StateTreeNode {
         self.store.get(self.root_hash)
     }
-}
-
-
-struct StateTreeNodeUpdater {
-    parent: Box<StateTreeNodeUpdater>,
-    node: StateTreeNode
 }
 
 
@@ -181,7 +174,7 @@ fn get_bit_at(input: u32, index: u8) -> bool {
 
 
 #[derive(Debug, Copy, Clone)]
-struct StateTreeNode {
+pub struct StateTreeNode {
     left: Hash,
     right: Hash,
     height: u8
@@ -282,18 +275,18 @@ mod tests {
     fn insert() {
         let mut state_tree = StateTree::new(Hash::random());
 
-        for i in [0u8;20].iter(){
+        for _i in [0u8;20].iter(){
             state_tree.insert(Hash::random());
         }
         let hash1 = state_tree.root_hash;
         println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
 
-        for i in [0u8;80].iter(){
+        for _i in [0u8;80].iter(){
             state_tree.insert(Hash::random());
         }
         println!("root_hash {:?}, head_id {:?}, \nroot_node: {:?}\n", state_tree.root_hash, state_tree.head_id, state_tree.root_node());
 
-        for i in [0u8;80].iter(){
+        for _i in [0u8;80].iter(){
             state_tree.revert();
         }
         let hash2 = state_tree.root_hash;

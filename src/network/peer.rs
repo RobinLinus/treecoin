@@ -1,12 +1,9 @@
-
-use utils::serializer::{Serializer, Reader, Writer, Readable, Writeable};
-use std::io::{ Read, Write, Error };
+use utils::serializer::{ Serializer, Reader, Writer, Readable, Writeable };
+use std::io::{ Error, ErrorKind };
 use std::sync::{ Arc, RwLock };
 use std::net::TcpStream;
-use network::message::{ Message, MessageHeader, EmptyMessageBody };
+use network::message::{ Message, MessageHeader };
 use protocol::protocol::message_type;
-
-
 
 
 pub type PeerTracker = Arc<RwLock<Peer>>;
@@ -63,9 +60,6 @@ impl Peer {
 
 
 
-
-
-
 #[derive(Debug)]
 pub struct PeerAddress{
     pub string : String
@@ -76,9 +70,12 @@ impl PeerAddress{
         PeerAddress{string}
     }
 
-    pub fn from_utf8(bytes:[u8;14]) -> PeerAddress{
+    pub fn from_utf8(bytes:[u8;14]) -> Result<PeerAddress, Error>{
         let v: Vec<u8> = bytes.iter().cloned().collect();
-        PeerAddress::new(String::from_utf8(v).unwrap())
+        match String::from_utf8(v) {
+            Ok(address_string) => Ok(PeerAddress::new(address_string)),
+            Err( _ ) => Err(Error::new(ErrorKind::InvalidData, "Could not parse PeerAddress")),
+        }
     }
 
     pub fn equals(&self, address:&String) -> bool{
@@ -92,10 +89,10 @@ impl PeerAddress{
 
 impl Writeable for PeerAddress{
      fn write(&self, writer: &mut Writer) -> Result<(), Error>{
-        let mut self_bytes =  self.string.as_bytes();
-        let mut bytes = &mut [0u8;14];
+        let self_bytes =  self.string.as_bytes();
+        let bytes = &mut [0u8;14];
         bytes.copy_from_slice(&self_bytes[0..14]);
-        writer.write_fixed_size(bytes);
+        writer.write_fixed_size(bytes)?;
         Ok(())
     }
  }
@@ -103,12 +100,8 @@ impl Writeable for PeerAddress{
  impl Readable for PeerAddress{
     fn read(reader: &mut Reader) -> Result<PeerAddress, Error>{
         let mut bytes = [0u8;14];
-        match reader.read_fixed_size(&mut bytes) {
-            Ok(expr) => {
-                Ok(PeerAddress::from_utf8(bytes))
-            },
-            Err(e) => Err(e),
-        }
+        reader.read_fixed_size(&mut bytes)?;
+        PeerAddress::from_utf8(bytes)
     }
 }
 
@@ -119,7 +112,7 @@ pub struct PeerInfo {
 }
 
 impl PeerInfo {
-    pub fn new(server_address: PeerAddress, chain_height: u32) -> PeerInfo{
+    pub fn new( server_address: PeerAddress, chain_height: u32 ) -> PeerInfo{
         PeerInfo{
             server_address,
             chain_height

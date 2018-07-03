@@ -1,3 +1,4 @@
+use utils::hash::Hashable;
 use utils::serializer::{ Reader, Readable, Writer, Writeable };
 use std::io::Error;
 use protocol::protocol::message_type;
@@ -12,7 +13,13 @@ pub struct Message<T:Writeable> {
 }
 
 impl <T:Writeable>Message<T> {
-    pub fn new(message_type: MessageType, body:T) -> Message<T> {
+    pub fn get_body(self) -> T {
+        self.body
+    }
+}
+
+impl <T:Writeable>Message<T> {
+    pub fn new(message_type: MessageType, mut body: T) -> Message<T> {
         Message{
             header: MessageHeader::new( MAGIC_BYTES, message_type),
             body: body
@@ -27,6 +34,8 @@ impl <T:Writeable> Writeable for Message<T> {
         writer.flush()
     }
 }
+
+impl <T:Writeable> Hashable for Message<T>{}
 
 #[derive(Debug)]
 pub struct MessageHeader{

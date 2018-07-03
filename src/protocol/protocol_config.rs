@@ -4,6 +4,7 @@ extern crate serde_json;
 // #[macro_use]
 // extern crate serde_derive;
 
+use blockchain::transaction::Address;
 use std::path::Path;
 use std::collections::HashMap;
 use self::serde_json::Error as OtherError;
@@ -26,7 +27,8 @@ pub struct Service{
 pub struct ProtocolConfig {
 	pub seed_nodes : Vec<String>,
 	pub services : HashMap <ServiceTypes, Service>,
-	pub archive_path : String
+	pub archive_path : String,
+	pub miner_address : String
 }
 
 impl ProtocolConfig {
@@ -46,5 +48,9 @@ impl ProtocolConfig {
 	pub fn get_archive_address(&self) -> String{
 		let service = self.services.get(&ServiceTypes::ArchiveNode).unwrap();
 		[ service.ip_address.to_string(), service.port.to_string() ].join(":")
+	}
+
+	pub fn get_miner_address(&self) -> Address {
+		Address::from_hex(self.miner_address.to_string())
 	}
 }

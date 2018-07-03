@@ -7,6 +7,7 @@ mod network;
 mod blockchain;
 mod miner;
 mod archive;
+mod wallet;
 
 use protocol::protocol::{ Protocol };
 use protocol::protocol_config::ProtocolConfig;
@@ -15,7 +16,6 @@ use blockchain::blockchain::Blockchain;
 use blockchain::block::{ Block, BlockHeader };
 use utils::Hash;
 use miner::miner::Miner;
-use std::{ thread, time };
 use std::env;
 
 fn main() {
@@ -28,12 +28,7 @@ fn main() {
 
   archive::archive::start_archive(config.get_archive_address(), config.archive_path.to_string());
   let genesis_block = Block::new(BlockHeader::new(Hash::zeros(), 0, 8888));
+  
   let mut protocol = Protocol::new(config, genesis_block);
-
-  loop {
-      protocol.poll();
-      // sleep
-  		thread::sleep( time::Duration::from_millis(10) );
-  }
-
+  protocol.start();
 }

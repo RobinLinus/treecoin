@@ -16,6 +16,8 @@
 		
 	},
 
-	"archive_path" : "test/node_2/archive/"
+	"archive_path" : "test/node_2/archive/",
+
+	"miner_address" : "222271292b0d87647c4d7dd5c191b22587620f8c580e03ed031c61e40a971fe6"
 
 }

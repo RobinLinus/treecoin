@@ -4,10 +4,9 @@ use utils::hash::Hashable;
 use utils::serializer::{ Reader, Readable, Writer, Writeable };
 
 use blockchain::transaction::Transaction;
-use std::io::{ Write, Read, Error };
+use std::io::{ Error };
 use std::fmt;
 use network::message::{ Message };
-use std::marker::Sized;
 use utils::Hash;
 use protocol::protocol::message_type;
 
@@ -102,7 +101,7 @@ impl Readable for Block {
         
         // read all transactions  
         let mut transactions = Vec::new();
-        for transaction in 0..transactions_count {
+        for _ in 0..transactions_count {
             transactions.push(Transaction::read(reader)?);
         }
         
@@ -123,6 +122,6 @@ impl fmt::Debug for BlockHeader {
 
 impl fmt::Debug for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}\n", self.header)
+        write!(f, "{:?}\n\tTransactions count: {}", self.header, self.transactions.len())
     }
 }

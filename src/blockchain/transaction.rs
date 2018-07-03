@@ -1,3 +1,4 @@
+use utils::hash::Hashable;
 use protocol::event::EventResult;
 use protocol::event::Event;
 pub use utils::serializer::{ Reader, Readable, Writer, Writeable };
@@ -15,9 +16,18 @@ pub struct TransactionInput {
     pub transaction_id : u32,
 }
 
-impl Readable for TransactionInput{
+impl TransactionInput {
+    pub fn new_coinbase() -> TransactionInput{
+        TransactionInput{
+            block_id : 0,
+            transaction_id : 0
+        }
+    }
+}
+
+impl Readable for TransactionInput {
     fn read(reader: &mut Reader) -> Result<TransactionInput, Error>{
-        Ok(TransactionInput{
+        Ok( TransactionInput {
                 block_id : u32::read(reader)?,
                 transaction_id : u32::read(reader)? 
             })
@@ -35,11 +45,22 @@ impl Writeable for TransactionInput {
 pub struct Address([u8;32]);
 
 impl Address{
+
     pub fn new(bytes: [u8;32]) -> Address{
         Address(bytes)
     }
+
+    pub fn from_hex(string : String) -> Address {
+        let byte_vec = hex::from_hex( string ).unwrap();
+        let mut bytes = [0u8;32];
+        for (place, element) in bytes.iter_mut().zip(byte_vec.iter()) {
+            *place = *element;
+        }
+        Address::new(bytes)
+    }
+
     pub fn to_hex(&self) -> String{
-        hex::to_hex(self.0.to_vec())
+        hex::to_hex( self.0.to_vec() )
     }
 }
 
@@ -99,6 +120,7 @@ impl Readable for TransactionOutput {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Signature([u8;64]);
 
 impl Signature{
@@ -138,7 +160,7 @@ impl Readable for Signature {
 }
 
 
-
+#[derive(Clone)]
 pub struct Transaction {
     pub inputs: Vec<TransactionInput>,
     pub outputs: Vec<TransactionOutput>,
@@ -150,7 +172,7 @@ impl Transaction {
         Transaction{
             inputs:inputs,
             outputs:outputs,
-            signature: Signature([0u8; 64])
+            signature: Signature([255u8; 64])
         }
     } 
 
@@ -168,6 +190,11 @@ impl Transaction {
             sum += output.value;
         }
         sum
+    }
+
+    pub fn new_coinbase( output: TransactionOutput ) -> Transaction{
+        let input = TransactionInput::new_coinbase();
+        Transaction::new(vec![input], vec![output])
     }
 }
 
@@ -230,6 +257,8 @@ impl Readable for Transaction {
     }
 }
 
+
+impl Hashable for Transaction {}
 
 impl fmt::Debug for TransactionOutput {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

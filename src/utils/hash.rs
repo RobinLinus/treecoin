@@ -1,4 +1,5 @@
 extern crate blake2_rfc as blake2;
+use std::mem::transmute;
 use utils::hash::blake2::blake2b::Blake2b;
 extern crate rand;
 use self::rand::Rng;
@@ -36,6 +37,13 @@ impl Hash {
 	pub fn random() -> Hash {
 		Hash::new(rand::random())
 	}
+
+	// Most significant 64 bits
+	pub fn to_u64( &self ) -> u64 {
+		let mut u_64: [u8;8] = Default::default();
+    	u_64.clone_from_slice(&self.0[..8]);
+		unsafe { transmute::<[u8;8], u64>(u_64) }
+	}
 }
 
 impl fmt::Debug for Hash {
@@ -61,7 +69,7 @@ impl Readable for Hash {
 
 
 pub trait Hashable:Writeable {
-    fn hash(&mut self) -> Hash{
+    fn hash(&self) -> Hash{
     	let mut writer = HashWriter::new();
     	self.write(&mut writer);
     	writer.finalize()
