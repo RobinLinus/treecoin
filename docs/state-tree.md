@@ -1,3 +1,10 @@
+# Block Parameters 
+
+- Proof of Work: Cuckoo Cycle 
+- Block Size: 1 MB
+- Block Time: 1 Min
+  - [Block Time vs Orphan Rates vs Security](https://eprint.iacr.org/2016/555.pdf)
+
 # State Tree
 
 ## Design Goals
@@ -5,10 +12,6 @@
 - Fast state updates
 - Prunable chain state
 - Simple design
-
-## Related Work
-- [Ultimate blockchain compression](https://bitcointalk.org/index.php?topic=88208.0) - the general idea that the blockchain can be compressed to achieve "trust-free lite nodes".
-- [Merkle-PATRICIA Trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) as used in systems like Ethereum. They introduce substantial computational and storage overhead, and they would be hard to update for the nano network because knowledge of almost the full tree is needed to compute the state transition defined by a random block. We introduce a more efficient representation.
 
 ## Overview
 The _State Tree_ is a modified blockchain: an authenticated, indexed, append-only _binary tree_.

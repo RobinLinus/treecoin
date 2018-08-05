@@ -120,7 +120,7 @@ impl PeerInfo {
     }
 
     pub fn to_message(self) -> Message<PeerInfo>{
-        Message::new(message_type::VER, self)
+        Message::new(message_type::VERSION, self)
     }
 }
 

@@ -51,13 +51,15 @@ impl Readable for BlockHeader {
 // #[derive(Debug)]
 pub struct Block {
     pub header: BlockHeader,
+    pub reward: Transaction,
     pub transactions: Vec<Transaction>
 }
 
 impl Block {
-    pub fn new(header:BlockHeader) -> Block{
-        Block{
+    pub fn new( header: BlockHeader, reward : Transaction ) -> Block{
+        Block {
             header,
+            reward : reward,
             transactions : vec![]
         }
     }
@@ -78,6 +80,9 @@ impl Writeable for Block {
         // write header
         self.header.write(writer)?;
 
+        // write reward transaction
+        self.reward.write(writer)?;
+
         // write transactions_count
         let transactions_count: u32 = self.transactions.len() as u32;
 
@@ -96,6 +101,9 @@ impl Readable for Block {
         // read header
         let header = BlockHeader::read(reader)?;
 
+        // read reward transaction
+        let reward = Transaction::read(reader)?;
+
         // read transactions_count
         let transactions_count: u32 = u32::read(reader)?;
         
@@ -107,6 +115,7 @@ impl Readable for Block {
         
         Ok(Block{
             header,
+            reward,
             transactions
         })
     }

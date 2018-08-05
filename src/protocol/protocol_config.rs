@@ -2,7 +2,7 @@ extern crate serde;
 extern crate serde_json;
 
 use blockchain::block::{ Block, BlockHeader };
-use blockchain::transaction::Address;
+use blockchain::transaction::{ Transaction, Address };
 use utils::Hash;
 use std::path::Path;
 use std::collections::HashMap;
@@ -53,6 +53,7 @@ impl ProtocolConfig {
 	}
 
 	pub fn get_genesis_block() -> Block{
-		Block::new(BlockHeader::new( Hash::zeros(), 0, 8888) )
+		let reward = Transaction::new(vec!(),vec!());
+		Block::new(BlockHeader::new( Hash::zeros(), 0, 8888), reward )
 	}
 }

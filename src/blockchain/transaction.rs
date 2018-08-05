@@ -9,17 +9,19 @@ use utils::hex;
 
 pub type Value = u64;
 
-#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy)]
 pub struct TransactionInput {
     pub block_id : u32,
     pub transaction_id : u32,
+    pub output_id : u32,
 }
 
 impl TransactionInput {
     pub fn new_coinbase() -> TransactionInput{
         TransactionInput{
             block_id : 0,
-            transaction_id : 0
+            transaction_id : 0,
+            output_id : 0
         }
     }
 }
@@ -28,7 +30,8 @@ impl Readable for TransactionInput {
     fn read(reader: &mut Reader) -> Result<TransactionInput, Error>{
         Ok( TransactionInput {
                 block_id : u32::read(reader)?,
-                transaction_id : u32::read(reader)? 
+                transaction_id : u32::read(reader)?,
+                output_id : u32::read(reader)? 
             })
     }
 }
@@ -36,11 +39,12 @@ impl Readable for TransactionInput {
 impl Writeable for TransactionInput {
     fn write(&self, writer: &mut Writer) -> Result<(), Error>{
         self.block_id.write(writer)?;
-        self.transaction_id.write(writer)
+        self.transaction_id.write(writer)?;
+        self.output_id.write(writer)
     }
 } 
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Address([u8;32]);
 
 impl Address{
@@ -65,7 +69,7 @@ impl Address{
 
 impl fmt::Debug for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.to_hex())
+        write!(f, "{}", self.to_hex())
     }
 }
 
@@ -93,11 +97,11 @@ pub struct TransactionOutput {
 }
 
 impl TransactionOutput {
-    pub fn new(address:Address, value:Value, balance:Value)-> TransactionOutput{
+    pub fn new( address: Address, value: Value )-> TransactionOutput{
         TransactionOutput{
             address, 
             value, 
-            balance
+            balance: value
         }
     }
 }
@@ -183,7 +187,7 @@ impl Transaction {
         self.signature = signature;
     }
 
-    pub fn sum_output_values(&self) -> Value {
+    pub fn sum_outputs(&self) -> Value {
         let mut sum = 0;
         for output in &self.outputs{
             sum += output.value;
@@ -261,12 +265,18 @@ impl Hashable for Transaction {}
 
 impl fmt::Debug for TransactionOutput {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "\nOutput:\n\taddress: {:?}\n\tvalue: {:?}\tbalance: {:?}\n", self.address, self.value, self.balance)
+        write!(f, "{:?}\tvalue: {:?}\tbalance: {:?}", self.address, self.value, self.balance)
     }
 }
 
 impl fmt::Debug for Transaction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "\nTransaction:\n\tInputs:{:?}\nOutputs:{:?}\nSignature:\n {:?}", self.inputs, self.outputs, self.signature)
+    }
+}
+
+impl fmt::Debug for TransactionInput {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:08},{:05},{:03}", self.block_id, self.transaction_id, self.output_id )
     }
 }

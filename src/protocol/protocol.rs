@@ -16,6 +16,7 @@ use std::{ thread, time };
 impl EventListener for Protocol {
 
 	fn on_event( &mut self, event: Event ) -> EventResult {
+		
 		// mapping of all events
 		match event {
 		    Event::IncommingPeer(peer_tracker) => self.on_incomming_peer(peer_tracker),
@@ -39,13 +40,13 @@ pub struct Protocol {
 }
 
 pub mod message_type {
-	pub const VER: 				u32 = 1;
-	pub const VER_ACK: 			u32 = 2;
+	pub const VERSION: 			u32 = 1;
+	pub const VERSION_ACK: 		u32 = 2;
 	pub const ADDRESS: 			u32 = 3;
-	// pub const GET_BLOCKS: 		u32 = 4;
-	// pub const INV: 				u32 = 5;
 	pub const BLOCK: 			u32 = 6;
 	pub const TRANSACTION: 		u32 = 7;
+	// pub const GET_BLOCKS: 	u32 = 4;
+	// pub const INV: 			u32 = 5;
 }
 
 
@@ -55,8 +56,8 @@ impl Protocol {
 		let message_type = peer_channel.message_header.message_type;
 		match message_type {
 
-		    message_type::VER => self.on_peer_info_message(peer_channel),
-		    message_type::VER_ACK => self.on_peer_info_acknowledged_message(peer_channel),
+		    message_type::VERSION => self.on_peer_info_message(peer_channel),
+		    message_type::VERSION_ACK => self.on_peer_info_acknowledged_message(peer_channel),
 		    message_type::BLOCK => self.on_block_message(peer_channel),
 		    message_type::ADDRESS => self.on_address_message(peer_channel),
 		    message_type::TRANSACTION => self.on_transaction_message(peer_channel),
@@ -73,7 +74,7 @@ impl Protocol {
 		// send our info
 		let peer = peer_tracker.read().unwrap();
 		let mut conn = peer.connection.write().unwrap();
-		let info = PeerInfo::new( self.network.server.address(), self.blockchain.size() );
+		let info = PeerInfo::new( self.network.server.address(), self.blockchain.block_count() );
 		info.to_message().write(&mut *conn)?;
 		println!(">> Incoming Peer {:?}", peer.address());
 
@@ -86,7 +87,7 @@ impl Protocol {
 		// send our info
 		let peer = peer_tracker.read().unwrap();
 		let mut conn = peer.connection.write().unwrap();
-		let info = PeerInfo::new( self.network.server.address(), self.blockchain.size() );
+		let info = PeerInfo::new( self.network.server.address(), self.blockchain.block_count() );
 		info.to_message().write( &mut *conn )?;
 		println!( ">> Outgoing Peer {:?}", peer.address() );
 
@@ -103,7 +104,7 @@ impl Protocol {
 		let peer_info = {
 			let mut conn = peer.connection.write().unwrap();
 			let peer_info = PeerInfo::read(&mut *conn)?;
-			Message::new(message_type::VER_ACK, EmptyMessageBody).write(&mut *conn)?;
+			Message::new(message_type::VERSION_ACK, EmptyMessageBody).write(&mut *conn)?;
 			peer_info
 		};
 		println!(">> Received: {:?}", peer_info);
@@ -145,26 +146,23 @@ impl Protocol {
 		let mut block = Block::read(&mut *conn)?;
 			    
     	println!(">> Received: {:?}", block);
-    	match self.blockchain.verify_block(&mut block) {
-    	    Ok( _ ) => (),
-    	    Err(e) => println!("\nVerification Error: {:?}", e),
-    	};
+    	self.blockchain.verify_block(&mut block)?;
     	self.blockchain.apply_block(&mut block)?;
-    	self.miner.on_block(&mut block);
-    	block.write( &mut DiscWriter::block_writer(&self.config.archive_path, self.blockchain.size() ))?;
+    	self.miner.on_state_update(&block, &self.blockchain);
+    	block.write( &mut DiscWriter::block_writer(&self.config.archive_path, self.blockchain.block_count() ))?;
 
     	Ok(Event::Nothing)
 	}
 
 	fn on_block_mined( &mut self, mut block: Block ) -> EventResult {
 		self.blockchain.apply_block( &mut block )?;
-		self.miner.update_head( self.blockchain.root_hash(), self.blockchain.difficulty_target );
-		block.write( &mut DiscWriter::block_writer( &self.config.archive_path, self.blockchain.size()))?;
+		self.miner.on_state_update(&block, &self.blockchain);		
+    	block.write( &mut DiscWriter::block_writer( &self.config.archive_path, self.blockchain.block_count()))?;
 		self.network.broadcast( &block.to_message() )?;
 		Ok(Event::Nothing)
 	}
 
-	fn on_transaction_message(&mut self, channel:PeerChannel ) -> EventResult {
+	fn on_transaction_message(&mut self, channel: PeerChannel ) -> EventResult {
 		let transaction = {
 			let mut peer = channel.peer.write().unwrap();
 			let mut conn = peer.connection.write().unwrap();
@@ -205,10 +203,10 @@ impl Protocol {
 	// boilerplate
 	pub fn new(config: ProtocolConfig, genesis_block: Block) -> Protocol{
 		let network = Network::new(&config);
-		let blockchain = Blockchain::new(genesis_block);
+		let blockchain = Blockchain::new(&genesis_block);
 		let mut miner = Miner::new(config.get_miner_address());
-		miner.update_head(blockchain.root_hash(), blockchain.difficulty_target);
-		Protocol{
+		miner.on_state_update(&genesis_block, &blockchain);
+    	Protocol{
 			miner,
 			network,
 			blockchain,
@@ -228,7 +226,7 @@ impl Protocol {
 	}
 
 	fn poll_miner(&mut self) -> EventResult {
-		match self.miner.poll() {
+		match self.miner.poll_new_block(&self.blockchain) {
 		    Ok(event) => self.on_event(event),
 		    Err(err) => Err(err),
 		}
@@ -242,7 +240,7 @@ impl Protocol {
 	}
 
 	fn poll_wallet(&mut self) -> EventResult {
-		match self.wallet.poll_new_transaction(&self.blockchain)  {
+		match self.wallet.poll_new_transaction( &self.blockchain, &self.config )  {
 		    Ok(event) => self.on_event(event),
 		    Err(err) => Err(err),
 		}
@@ -262,14 +260,15 @@ impl Protocol {
 	fn log_stats(&self){
 		// do not print every cycle 
 		if( self.cycle_count % 500 ) != 0{ return };
-		println!("\n\nStats: \n\tcycle_count: {:?} \n\tconnections: {} peers\n\tchain_lenght: {:?} blocks\n\tstate_hash: {:?} \n\tUTXO set: {:?} UTXOs \n\ttx pool: {:?} TXs\n\n", 
-			self.cycle_count, 
-			self.network.peers_count(), 
-			self.blockchain.size(), 
-			self.blockchain.root_hash(),
-			self.blockchain.unspent_outputs_count(),
-			self.miner.pool_count(),
-		);    
+		println!("\n\nStats: \n\tcycle_count: {:?} \n\tconnections: {} peers\n\tchain_lenght: {:?} blocks\n\tstate_hash: {:?} \n\tUTXO set: {:?} UTXOs \n\ttx pool: {:?} TXs\n\n",
+				 self.cycle_count,
+				 self.network.peers_count(),
+				 self.blockchain.block_count(),
+				 self.blockchain.state_hash(),
+				 self.blockchain.unspent_outputs.count(),
+				 self.miner.pool_count(),
+		); 
+		self.blockchain.unspent_outputs.log();   
 	}
 }
 

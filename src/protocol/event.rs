@@ -22,13 +22,11 @@ pub trait EventSource {
 }
 
 pub trait EventListener {
-	
 	fn poll_source<T:EventSource>( &mut self, source: &mut T ) -> EventResult {
 		self.on_event(source.poll()?)
 	}
 
 	fn on_event(&mut self, event: Event) -> EventResult;
-
 }
 
 #[derive(Debug)]
@@ -37,6 +35,7 @@ pub enum Error {
 	StateMissMatch,
 	InvalidDifficulty,
 	InvalidCoinSum,
+    InvalidReward,
 	Io( io::Error )
 }
 
@@ -47,7 +46,8 @@ impl fmt::Display for Error {
             Error::InvalidInput => write!(f, "InvalidInput Error"),
             Error::StateMissMatch => write!(f, "StateMissMatch Error"),
             Error::InvalidDifficulty => write!(f, "InvalidDifficulty Error"),
-            Error::InvalidCoinSum => write!(f, "InvalidCoinSum Error")
+            Error::InvalidCoinSum => write!(f, "InvalidCoinSum Error"),
+            Error::InvalidReward => write!(f, "InvalidReward Error")
         }
     }
 }

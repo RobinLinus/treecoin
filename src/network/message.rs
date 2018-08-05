@@ -19,7 +19,7 @@ impl <T:Writeable>Message<T> {
 
 impl <T:Writeable>Message<T> {
     pub fn new(message_type: MessageType, body: T) -> Message<T> {
-        Message{
+        Message {
             header: MessageHeader::new( MAGIC_BYTES, message_type),
             body: body
         }
